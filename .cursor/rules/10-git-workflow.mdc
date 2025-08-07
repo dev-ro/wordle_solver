@@ -1,0 +1,136 @@
+---
+description: A clear and concise guide to our Git workflow, including commit standards, branch management, and GitHub integration.
+alwaysApply: true
+---
+# Git & GitHub Workflow Guide
+
+## 1\. Commit Standards
+
+Each commit is a snapshot of a single, logical change. Adhering to these standards is mandatory for all contributions.
+
+### Guiding Principles
+
+- **Commit frequently.** Make a new commit immediately after each logical, tested, and successful change.
+- **One change per commit.** Never bundle unrelated changes (e.g., a feature and a bug fix) into one commit.
+
+### Commit Message Format
+
+All commit messages **must** follow the Conventional Commits specification. This structure is not optional.
+
+\<type\>(\<scope\>): \<short description\>
+
+[optional longer body explaining the why and what]
+
+[optional footer(s) for things like Closes \#123]
+
+### Required Types
+
+- **feat**: A new feature for the user.
+- **fix**: A bug fix for the user.
+- **docs**: Changes to documentation only.
+- **style**: Formatting, whitespace, missing semicolons, etc. No production code changes.
+- **refactor**: Rewriting code without changing its external behavior.
+- **perf**: A code change that improves performance.
+- **test**: Adding or correcting tests.
+- **chore**: Updating build tasks, package manager configs, etc.
+- **ci**: Changes to our CI configuration files and scripts.
+
+### Message Rules
+
+- **Imperative Mood**: Write messages as if giving a command (e.g., Add feature, not Added feature).
+- **Capitalization**: Capitalize the first letter of the short description.
+- **No Period**: Do not end the short description with a period.
+- **Length**: Keep the short description under 72 characters.
+- **No Emojis**: Do not use emojis in commit messages.
+
+### Example Commits
+
+- **Good**: feat(auth): Add Google OAuth2 integration
+- **Good**: refactor(api): Extract user validation into a separate service
+- **Bad**: fixes stuff
+- **Bad**: feat: added a new button and also fixed a bug
+
+-----
+
+## 2\. Branch & Pull Request (PR) Workflow
+
+Follow this process for all features and fixes to ensure code is properly reviewed and integrated.
+
+### Step 1: Create a Branch
+
+Start all new work on a new branch created from the most up-to-date version of main.
+
+### Ensure main is up to date
+
+git checkout main
+git pull origin main
+
+### Create and switch to your new branch
+
+git checkout -b \<branch-name\>
+
+### Step 2: Commit Your Work
+
+As you work, make small, logical commits using the standards defined above.
+
+### Step 3: Create an Issue (For feat and fix only)
+
+This workflow requires creating an issue *after* the work is committed. This links the code change to a trackable work item on GitHub.
+
+- **Rule**: If your commit is a feat or fix, you **must** create a corresponding GitHub issue immediately after the commit.
+- Use the gh CLI. The issue title **must** be the commit subject, and the body **must** be the commit body.
+
+**Example:**
+After committing git commit -m "fix(sync): Correct field mapping" -m "The 'last\_updated' field was missing.", create the issue:
+
+gh issue create --title "fix(sync): Correct field mapping" --body "The 'last\_updated' field was missing."
+
+### Step 4: Create a Pull Request
+
+Once your work is ready for review, push your branch and open a PR.
+
+### Push your new branch to the remote repository
+
+git push origin \<branch-name\>
+
+Now, go to GitHub to create a Pull Request from your branch into main. In the PR description, link the issue it resolves using a keyword like Closes \#123.
+
+### Step 5: Merge the Pull Request
+
+After the PR is approved and all checks have passed, merge it on GitHub using the **"Create a merge commit"** option. Do not squash or rebase from the GitHub UI.
+
+### Step 6: Post-Merge Cleanup
+
+To keep the repository tidy, delete the branch after it has been successfully merged.
+
+### Switch back to the main branch
+
+git checkout main
+
+### Delete the local branch
+
+git branch -d \<branch-name\>
+
+### Delete the remote branch
+
+git push origin --delete \<branch-name\>
+
+### Step 7: Keep Branches Updated
+
+While working, your feature branch can become out of date as main evolves. You **must** keep your branches in sync. This can be automated.
+
+- **To request an update**, ask the assistant to "update all branches with main." The assistant will handle merging main into all active feature branches.
+
+-----
+
+## 3\. GitHub CLI Usage
+
+### Formatting Multiline Comments
+
+When adding a multiline comment to a PR or issue via the gh CLI, you **must** pipe the content to avoid rendering issues with newline characters (\\n).
+
+- **CORRECT**: Renders newlines properly.
+    printf "First line.\\nSecond line." | gh pr comment 123 --body-file -
+
+- **INCORRECT**: Will literally print \\n in the comment.
+    gh pr comment 123 --body "First line.\\nSecond line."
