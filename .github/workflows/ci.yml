@@ -118,3 +118,25 @@ jobs:
         path: ./
         base: main
         head: HEAD
+        
+  bash-scripts-check:
+    name: Bash Scripts Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check bash scripts syntax
+      run: |
+        for script in scripts/*.sh; do
+          echo "Checking $script..."
+          bash -n "$script"
+          echo "✅ $script syntax is valid"
+        done
+        
+    - name: Make scripts executable
+      run: chmod +x scripts/*.sh
+      
+    - name: Test setup script
+      run: ./scripts/setup.sh || true  # Allow to fail in CI

@@ -35,32 +35,5 @@ jobs:
       with:
         credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE }}
         
-    - name: Upload dictionaries to Cloud Storage
-      run: |
-        echo "Uploading dictionary files to Cloud Storage..."
-        
-        # Create dictionaries directory if it doesn't exist
-        gsutil -m ls gs://wordle-solver-kyle.appspot.com/dictionaries/ || gsutil -m mkdir gs://wordle-solver-kyle.appspot.com/dictionaries/
-        
-        # Upload dictionary files
-        gsutil -m cp assets/words/*.json gs://wordle-solver-kyle.appspot.com/dictionaries/
-        
-        # List uploaded files for verification
-        echo "Files in Cloud Storage:"
-        gsutil ls gs://wordle-solver-kyle.appspot.com/dictionaries/
-        
-    - name: Deploy Storage rules
-      run: |
-        # Install Firebase CLI
-        npm install -g firebase-tools
-        
-        # Deploy storage rules
-        firebase deploy --only storage:rules --project wordle-solver-kyle --non-interactive
-      env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE }}
-        
-    - name: Notify completion
-      run: |
-        echo "✅ Dictionary files updated successfully in Cloud Storage"
-        echo "📁 Files uploaded:"
-        gsutil ls gs://wordle-solver-kyle.appspot.com/dictionaries/
+    - name: Upload dictionaries using bash script
+      run: ./scripts/upload-dictionaries.sh

@@ -24,17 +24,13 @@ jobs:
         channel: 'stable'
         cache: true
         
-    - name: Get Flutter dependencies
-      run: flutter pub get
-      
-    - name: Analyze Flutter code
-      run: flutter analyze
-      
-    - name: Run Flutter tests
-      run: flutter test
-      
-    - name: Build Flutter web
-      run: flutter build web --release
+    - name: Build Flutter web for preview
+      run: |
+        flutter clean
+        flutter pub get
+        flutter analyze
+        flutter test
+        flutter build web --release
       
     - name: Deploy preview to Firebase Hosting
       uses: FirebaseExtended/action-hosting-deploy@v0
