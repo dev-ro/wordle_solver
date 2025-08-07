@@ -115,14 +115,21 @@ class _GridSection extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                for (int r = 0; r < state.grid.length; r++) ...[
-                  FeedbackRow(
-                    tiles: state.grid[r],
-                    onToggleFeedback: (i) => controller.toggleFeedback(i),
-                    onLetterChanged: (i, v) => controller.setLetter(i, v),
-                  ),
-                  if (r != state.grid.length - 1) const SizedBox(height: 12),
-                ],
+                LayoutBuilder(builder: (context, c) {
+                  return Column(
+                    children: [
+                      for (int r = 0; r < state.grid.length; r++) ...[
+                        FeedbackRow(
+                          tiles: state.grid[r],
+                          onToggleFeedback: (i) => controller.toggleFeedback(i),
+                          onLetterChanged: (i, v) => controller.setLetter(i, v),
+                          maxWidth: c.maxWidth - 32, // inner padding margin
+                        ),
+                        if (r != state.grid.length - 1) const SizedBox(height: 12),
+                      ],
+                    ],
+                  );
+                }),
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,

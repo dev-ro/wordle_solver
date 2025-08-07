@@ -7,34 +7,38 @@ class FeedbackRow extends StatelessWidget {
   final List<SolverTile> tiles;
   final void Function(int index) onToggleFeedback;
   final void Function(int index, String letter) onLetterChanged;
+  final double maxWidth;
 
   const FeedbackRow({
     super.key,
     required this.tiles,
     required this.onToggleFeedback,
     required this.onLetterChanged,
+    required this.maxWidth,
   });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = constraints.maxWidth * 0.02;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (int i = 0; i < tiles.length; i++) ...[
-              FeedbackTile(
-                letter: tiles[i].letter,
-                feedback: tiles[i].feedback,
-                onTap: () => onToggleFeedback(i),
-                onLetterChanged: (v) => onLetterChanged(i, v),
-              ),
-              if (i != tiles.length - 1) SizedBox(width: spacing),
-            ]
-          ],
-        );
-      },
+    // Compute side length so that all tiles + gaps fit within maxWidth
+    final gap = 8.0;
+    final side = (maxWidth - gap * (tiles.length - 1)) / tiles.length;
+    final clampedSide = side.clamp(36.0, 64.0);
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: gap,
+      runSpacing: gap,
+      children: [
+        for (int i = 0; i < tiles.length; i++)
+          FeedbackTile(
+            letter: tiles[i].letter,
+            feedback: tiles[i].feedback,
+            onTap: () => onToggleFeedback(i),
+            onLongPress: () => onToggleFeedback(i),
+            onLetterChanged: (v) => onLetterChanged(i, v),
+            side: clampedSide,
+          ),
+      ],
     );
   }
 }

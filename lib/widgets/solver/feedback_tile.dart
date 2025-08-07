@@ -5,15 +5,19 @@ import '../../state/solver_state.dart';
 class FeedbackTile extends StatelessWidget {
   final String letter;
   final TileFeedback feedback;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final ValueChanged<String> onLetterChanged;
+  final double side;
 
   const FeedbackTile({
     super.key,
     required this.letter,
     required this.feedback,
-    required this.onTap,
+    this.onTap,
+    this.onLongPress,
     required this.onLetterChanged,
+    required this.side,
   });
 
   Color _bgColor(BuildContext context) {
@@ -39,17 +43,13 @@ class FeedbackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final shortest = size.shortestSide;
-    final tileSide = shortest / 8; // responsive sizing
-
     final textField = TextField(
       textAlign: TextAlign.center,
       maxLength: 1,
       decoration: const InputDecoration(counterText: ''),
       style: TextStyle(
         color: _fgColor(context),
-        fontSize: tileSide * 0.4,
+        fontSize: side * 0.4,
         fontWeight: FontWeight.bold,
       ),
       controller: TextEditingController(text: letter),
@@ -57,8 +57,8 @@ class FeedbackTile extends StatelessWidget {
     );
 
     final child = Container(
-      width: tileSide,
-      height: tileSide,
+      width: side,
+      height: side,
       decoration: BoxDecoration(
         color: _bgColor(context),
         borderRadius: BorderRadius.circular(12),
@@ -72,6 +72,8 @@ class FeedbackTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
+      onDoubleTap: onLongPress,
       child: child,
     );
   }
