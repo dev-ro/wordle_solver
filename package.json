@@ -1,5 +1,19 @@
 {
+  "name": "wordle-solver",
+  "version": "1.0.0",
+  "description": "Multi-language Wordle solver with Firebase backend",
+  "scripts": {
+    "upload-dictionaries": "node scripts/upload-dictionaries.js",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:hosting": "flutter build web && firebase deploy --only hosting",
+    "deploy:database": "firebase deploy --only firestore,storage",
+    "deploy:all": "firebase deploy"
+  },
   "dependencies": {
-    "firebase-tools": "^14.12.0"
+    "firebase-tools": "^14.12.0",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
   }
 }

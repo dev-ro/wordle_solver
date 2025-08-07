@@ -1,0 +1,120 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  flutter-ci:
+    name: Flutter CI
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+        channel: 'stable'
+        cache: true
+        
+    - name: Get Flutter dependencies
+      run: flutter pub get
+      
+    - name: Verify Flutter installation
+      run: flutter doctor -v
+      
+    - name: Analyze Flutter code
+      run: flutter analyze --fatal-infos
+      
+    - name: Check Flutter formatting
+      run: dart format --set-exit-if-changed .
+      
+    - name: Run Flutter tests
+      run: flutter test --coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: coverage/lcov.info
+        fail_ci_if_error: false
+        
+    - name: Build Flutter web (debug)
+      run: flutter build web --debug
+      
+    - name: Build Flutter Android APK (debug)
+      run: flutter build apk --debug
+      
+  python-ci:
+    name: Python Functions CI
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install Python dependencies
+      run: |
+        cd functions
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black flake8 mypy
+        
+    - name: Check Python code formatting
+      run: |
+        cd functions
+        source venv/bin/activate
+        black --check main.py
+        
+    - name: Lint Python code
+      run: |
+        cd functions
+        source venv/bin/activate
+        flake8 main.py --max-line-length=100 --ignore=E203,W503
+        
+    - name: Type check Python code
+      run: |
+        cd functions
+        source venv/bin/activate
+        mypy main.py --ignore-missing-imports
+        
+    - name: Test Python functions
+      run: |
+        cd functions
+        source venv/bin/activate
+        if [ -f "test_main.py" ]; then
+          pytest test_main.py -v --cov=main
+        else
+          echo "⚠️ No Python tests found"
+        fi
+        
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run security scan
+      uses: securecodewarrior/github-action-add-sarif@v1
+      with:
+        sarif-file: 'security-scan-results.sarif'
+      continue-on-error: true
+      
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD

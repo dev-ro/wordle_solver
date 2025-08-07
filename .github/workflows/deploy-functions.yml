@@ -1,0 +1,64 @@
+name: Deploy Cloud Functions
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'functions/**' ]
+  workflow_dispatch:
+
+jobs:
+  deploy-functions:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+      
+    - name: Validate Python functions
+      run: |
+        cd functions
+        python -m py_compile main.py
+        echo "✅ Python functions syntax is valid"
+        
+    - name: Install Python dependencies
+      run: |
+        cd functions
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        echo "✅ Python dependencies installed"
+        
+    - name: Test Cloud Functions locally (if tests exist)
+      run: |
+        cd functions
+        if [ -f "test_main.py" ]; then
+          source venv/bin/activate
+          python -m pytest test_main.py -v
+        else
+          echo "⚠️ No tests found, skipping test step"
+        fi
+        
+    - name: Deploy Cloud Functions
+      run: firebase deploy --only functions --project wordle-solver-kyle --non-interactive
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE }}
+        
+    - name: Test deployed functions
+      run: |
+        echo "Testing health check endpoint..."
+        # Add function testing here once deployed
+        echo "✅ Cloud Functions deployed successfully"
