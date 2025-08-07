@@ -65,22 +65,20 @@ class _GridSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Theme.of(context).platform == TargetPlatform.iOS
-                  ? CupertinoSegmentedControl<int>(
-                      children: const {5: Text('5'), 6: Text('6')},
-                      groupValue: state.config.wordLength,
-                      onValueChanged: (v) => controller.setWordLength(v),
-                    )
-                  : DropdownButton<int>(
-                      value: state.config.wordLength,
-                      items: const [
-                        DropdownMenuItem(value: 5, child: Text('5')),
-                        DropdownMenuItem(value: 6, child: Text('6')),
-                      ],
-                      onChanged: (v) {
-                        if (v != null) controller.setWordLength(v);
-                      },
-                    ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Length: ${state.config.wordLength}',
+                      style: Theme.of(context).textTheme.labelMedium),
+                  Slider(
+                    min: 3,
+                    max: 20,
+                    divisions: 17,
+                    value: state.config.wordLength.toDouble(),
+                    onChanged: (v) => controller.setWordLength(v.round()),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -119,7 +117,7 @@ class _GridSection extends StatelessWidget {
                   return Column(
                     children: [
                       for (int r = 0; r < state.grid.length; r++) ...[
-                        FeedbackRow(
+                        _FocusableFeedbackRow(
                           tiles: state.grid[r],
                           onToggleFeedback: (i) => controller.toggleFeedback(i),
                           onLetterChanged: (i, v) => controller.setLetter(i, v),
@@ -186,6 +184,74 @@ class _RecommendationsSection extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _FocusableFeedbackRow extends StatefulWidget {
+  final List<SolverTile> tiles;
+  final void Function(int index) onToggleFeedback;
+  final void Function(int index, String letter) onLetterChanged;
+  final double maxWidth;
+
+  const _FocusableFeedbackRow({
+    required this.tiles,
+    required this.onToggleFeedback,
+    required this.onLetterChanged,
+    required this.maxWidth,
+  });
+
+  @override
+  State<_FocusableFeedbackRow> createState() => _FocusableFeedbackRowState();
+}
+
+class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
+  late List<FocusNode> _nodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _nodes = List.generate(widget.tiles.length, (_) => FocusNode());
+    if (_nodes.isNotEmpty) {
+      // Autofocus first tile on mount for typing flow
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _nodes.first.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _FocusableFeedbackRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tiles.length != widget.tiles.length) {
+      for (final n in _nodes) {
+        n.dispose();
+      }
+      _nodes = List.generate(widget.tiles.length, (_) => FocusNode());
+      if (_nodes.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _nodes.first.requestFocus();
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final n in _nodes) {
+      n.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FeedbackRow(
+      tiles: widget.tiles,
+      onToggleFeedback: widget.onToggleFeedback,
+      onLetterChanged: widget.onLetterChanged,
+      maxWidth: widget.maxWidth,
+      focusNodes: _nodes,
     );
   }
 }

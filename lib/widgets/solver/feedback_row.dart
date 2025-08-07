@@ -8,6 +8,7 @@ class FeedbackRow extends StatelessWidget {
   final void Function(int index) onToggleFeedback;
   final void Function(int index, String letter) onLetterChanged;
   final double maxWidth;
+  final List<FocusNode> focusNodes;
 
   const FeedbackRow({
     super.key,
@@ -15,6 +16,7 @@ class FeedbackRow extends StatelessWidget {
     required this.onToggleFeedback,
     required this.onLetterChanged,
     required this.maxWidth,
+    required this.focusNodes,
   });
 
   @override
@@ -37,6 +39,9 @@ class FeedbackRow extends StatelessWidget {
             onLongPress: () => onToggleFeedback(i),
             onLetterChanged: (v) => onLetterChanged(i, v),
             side: clampedSide,
+            focusNode: focusNodes[i],
+            onMoveNext: i < tiles.length - 1 ? () => focusNodes[i + 1].requestFocus() : null,
+            onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
           ),
       ],
     );
