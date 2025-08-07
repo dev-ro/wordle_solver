@@ -1,0 +1,57 @@
+name: Update Dictionaries
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'assets/words/**' ]
+  workflow_dispatch:
+
+jobs:
+  update-dictionaries:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+      
+    - name: Authenticate to Firebase
+      env:
+        FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE }}
+      run: echo "$FIREBASE_SERVICE_ACCOUNT_WORDLE_SOLVER_KYLE" > service-account.json
+      
+    - name: Set Firebase project
+      run: firebase use wordle-solver-kyle --token "${{ secrets.FIREBASE_TOKEN }}"
+      
+    - name: Upload dictionaries to Cloud Storage
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: service-account.json
+      run: |
+        # Install Google Cloud SDK
+        curl https://sdk.cloud.google.com | bash > /dev/null
+        source $HOME/google-cloud-sdk/path.bash.inc
+        
+        # Authenticate with service account
+        gcloud auth activate-service-account --key-file=service-account.json
+        
+        # Set project
+        gcloud config set project wordle-solver-kyle
+        
+        # Upload dictionary files to Cloud Storage
+        gsutil -m cp assets/words/*.json gs://wordle-solver-kyle.appspot.com/dictionaries/
+        
+        # Set proper permissions (readable by authenticated users)
+        gsutil -m acl ch -u allAuthenticatedUsers:R gs://wordle-solver-kyle.appspot.com/dictionaries/*.json
+        
+    - name: Clean up
+      run: rm -f service-account.json
+      
+    - name: Notify completion
+      run: echo "Dictionary files updated successfully in Cloud Storage"

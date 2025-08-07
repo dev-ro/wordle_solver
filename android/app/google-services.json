@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "687583059034",
+    "project_id": "wordle-solver-kyle",
+    "storage_bucket": "wordle-solver-kyle.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687583059034:android:e4943bd0671d55169d4c63",
+        "android_client_info": {
+          "package_name": "com.example.wordle_solver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByUF0ty89vznI68IvUPIbQ41psLqTCV6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
