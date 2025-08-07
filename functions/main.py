@@ -220,6 +220,7 @@ def recommend_guesses(
     prefix: Optional[str],
     n: int = 9,
     guess_count: int = 1,
+    score_base_word_list: Optional[List[str]] = None,
 ) -> List[Tuple[str, float]]:
     """
     Recommend top n guess words from the word list.
@@ -245,7 +246,8 @@ def recommend_guesses(
         return []
 
     # Calculate letter frequencies and scores
-    frequencies = calculate_letter_frequency(word_list, length, prefix)
+    base = score_base_word_list if score_base_word_list is not None else word_list
+    frequencies = calculate_letter_frequency(base, length, prefix)
     letter_scores = normalize_letter_frequencies(frequencies)
 
     # Score and sort words
@@ -363,9 +365,16 @@ def calculate_next_move(req: https_fn.CallableRequest) -> Dict[str, Any]:
             guess_feedback = list(zip(guess, feedback))
             possible_words = filter_possible_words(possible_words, guess_feedback)
 
-        # Generate recommendations
+        # Generate recommendations strictly from remaining possible words,
+        # but compute letter frequency over the full dictionary for better scoring,
+        # matching the reference prototype behavior.
         recommendations = recommend_guesses(
-            dictionary, word_length, prefix, n=9, guess_count=guess_count
+            possible_words,
+            word_length,
+            prefix,
+            n=9,
+            guess_count=guess_count,
+            score_base_word_list=dictionary,
         )
 
         # Find variable positions for filler word analysis
