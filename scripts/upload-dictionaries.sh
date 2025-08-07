@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_ID="wordle-solver-kyle"
-BUCKET_NAME="${PROJECT_ID}.appspot.com"
+BUCKET_NAME="${PROJECT_ID}.firebasestorage.app"
 DICTIONARIES_DIR="assets/words"
 STORAGE_PATH="dictionaries"
 
