@@ -134,21 +134,36 @@ jobs:
                   # Scan Flutter/Dart and Python manifests/locks
                   osv-scanner -r . || true
 
+            - name: Install jq (for JSON parsing)
+              run: sudo apt-get update && sudo apt-get install -y jq
+
             - name: Install trufflehog (prebuilt binary)
               run: |
                   set -euo pipefail
                   RELEASE_API="https://api.github.com/repos/trufflesecurity/trufflehog/releases/latest"
-                  ASSET_URL=$(curl -sSL "$RELEASE_API" | grep browser_download_url | grep linux_amd64 | head -n1 | cut -d '"' -f 4)
-                  echo "Downloading: $ASSET_URL"
-                  curl -sSL "$ASSET_URL" -o trufflehog.tar.gz || curl -sSL "$ASSET_URL" -o trufflehog
-                  if [ -f trufflehog.tar.gz ]; then
-                    tar -xzf trufflehog.tar.gz || true
-                    # common extracted names: trufflehog or trufflehog_*/trufflehog
-                    if [ -f trufflehog ]; then chmod +x trufflehog; sudo mv trufflehog /usr/local/bin/; fi
-                    BIN=$(find . -type f -name trufflehog | head -n1 || true)
-                    if [ -n "$BIN" ]; then chmod +x "$BIN"; sudo mv "$BIN" /usr/local/bin/trufflehog; fi
+                  JSON=$(curl -sSL "$RELEASE_API")
+                  # Prefer tar.gz for linux_amd64; fallback to raw binary if tar.gz isn't present
+                  TARBALL_URL=$(echo "$JSON" | jq -r '.assets[] | select(.name | test("linux_amd64.*\\.tar\\.gz$")) | .browser_download_url' | head -n1)
+                  if [ -z "$TARBALL_URL" ] || [ "$TARBALL_URL" = "null" ]; then
+                    BINARY_URL=$(echo "$JSON" | jq -r '.assets[] | select(.name | test("linux_amd64$")) | .browser_download_url' | head -n1)
                   else
-                    chmod +x trufflehog; sudo mv trufflehog /usr/local/bin/
+                    BINARY_URL=""
+                  fi
+                  if [ -n "$TARBALL_URL" ]; then
+                    echo "Downloading tarball: $TARBALL_URL"
+                    curl -sSL "$TARBALL_URL" -o trufflehog.tar.gz
+                    tar -xzf trufflehog.tar.gz
+                    BIN=$(find . -maxdepth 2 -type f -name trufflehog | head -n1)
+                    chmod +x "$BIN"
+                    sudo mv "$BIN" /usr/local/bin/trufflehog
+                  elif [ -n "$BINARY_URL" ]; then
+                    echo "Downloading binary: $BINARY_URL"
+                    curl -sSL "$BINARY_URL" -o trufflehog
+                    chmod +x trufflehog
+                    sudo mv trufflehog /usr/local/bin/
+                  else
+                    echo "Failed to locate trufflehog linux_amd64 asset in latest release" >&2
+                    exit 1
                   fi
 
             - name: Secret scan (trufflehog filesystem)
