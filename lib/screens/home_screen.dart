@@ -219,8 +219,16 @@ class _GridSection extends StatelessWidget {
                       color: const Color(0xFF2E7D32),
                       borderColor: Colors.white24,
                       onTap: () {
-                        final idx = state.selectedIndex ?? 0;
-                        final current = state.grid.last[idx].feedback;
+                        // Safely resolve the target index within the current row
+                        if (state.grid.isEmpty || state.grid.last.isEmpty) {
+                          return;
+                        }
+                        int idx = state.selectedIndex ?? 0;
+                        final lastRow = state.grid.last;
+                        if (idx < 0 || idx >= lastRow.length) {
+                          idx = 0;
+                        }
+                        final current = lastRow[idx].feedback;
                         controller.setTileFeedback(
                           idx,
                           current == TileFeedback.green
@@ -233,8 +241,16 @@ class _GridSection extends StatelessWidget {
                       color: const Color(0xFFF9A825),
                       borderColor: Colors.white24,
                       onTap: () {
-                        final idx = state.selectedIndex ?? 0;
-                        final current = state.grid.last[idx].feedback;
+                        // Safely resolve the target index within the current row
+                        if (state.grid.isEmpty || state.grid.last.isEmpty) {
+                          return;
+                        }
+                        int idx = state.selectedIndex ?? 0;
+                        final lastRow = state.grid.last;
+                        if (idx < 0 || idx >= lastRow.length) {
+                          idx = 0;
+                        }
+                        final current = lastRow[idx].feedback;
                         controller.setTileFeedback(
                           idx,
                           current == TileFeedback.yellow
