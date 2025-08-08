@@ -11,7 +11,8 @@ plugins {
 android {
     namespace = "com.example.wordle_solver"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Use the highest Android NDK version required by Firebase plugins
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
