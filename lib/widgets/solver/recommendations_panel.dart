@@ -14,69 +14,75 @@ class RecommendationsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (response == null) {
-      return const SizedBox.shrink();
-    }
-
     final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Recommendations (${response!.recommendations.length})',
+          'Recommendations',
           style: theme.textTheme.titleMedium,
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: response!.recommendations
-              .map(
-                (r) => ActionChip(
-                  label: Text('${r.word} (${r.score.toStringAsFixed(1)})'),
-                  onPressed: () => onSelectWord(r.word),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Remaining: ${response!.remainingCount}',
-          style: theme.textTheme.labelLarge,
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 100,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: response!.remainingWords
-                .take(50)
-                .map(
-                  (w) => Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Chip(label: Text(w)),
-                  ),
-                )
-                .toList(),
+        if (response == null || response!.recommendations.isEmpty) ...[
+          Text(
+            'Tap Recommend to get suggestions',
+            style: theme.textTheme.bodySmall,
+            textAlign: TextAlign.center,
           ),
-        ),
-        if (response!.fillerSuggestions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text('Filler suggestions', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
+        ] else ...[
           Wrap(
+            alignment: WrapAlignment.center,
             spacing: 8,
             runSpacing: 8,
-            children: response!.fillerSuggestions
+            children: response!.recommendations
                 .map(
-                  (w) => InputChip(
-                    label: Text(w),
-                    onPressed: () => onSelectWord(w),
+                  (r) => ActionChip(
+                    label: Text('${r.word} (${r.score.toStringAsFixed(1)})'),
+                    onPressed: () => onSelectWord(r.word),
                   ),
                 )
                 .toList(),
           ),
+          const SizedBox(height: 12),
+          Text(
+            'Remaining: ${response!.remainingCount}',
+            style: theme.textTheme.labelLarge,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: response!.remainingWords
+                .take(50)
+                .map((w) => Chip(label: Text(w)))
+                .toList(),
+          ),
+          if (response!.fillerSuggestions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Filler suggestions',
+              style: theme.textTheme.titleSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: response!.fillerSuggestions
+                  .map(
+                    (w) => InputChip(
+                      label: Text(w),
+                      onPressed: () => onSelectWord(w),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
         ],
       ],
     );

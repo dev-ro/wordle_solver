@@ -9,6 +9,7 @@ class FeedbackRow extends StatelessWidget {
   final void Function(int index, String letter) onLetterChanged;
   final double maxWidth;
   final List<FocusNode> focusNodes;
+  final bool lockFirstTile;
 
   const FeedbackRow({
     super.key,
@@ -17,6 +18,7 @@ class FeedbackRow extends StatelessWidget {
     required this.onLetterChanged,
     required this.maxWidth,
     required this.focusNodes,
+    required this.lockFirstTile,
   });
 
   @override
@@ -35,7 +37,8 @@ class FeedbackRow extends StatelessWidget {
           FeedbackTile(
             letter: tiles[i].letter,
             feedback: tiles[i].feedback,
-            onTap: () => onToggleFeedback(i),
+            // Use long-press for feedback toggle; disable single-tap toggle
+            onTap: null,
             onLongPress: () => onToggleFeedback(i),
             onLetterChanged: (v) => onLetterChanged(i, v),
             side: clampedSide,
@@ -44,6 +47,7 @@ class FeedbackRow extends StatelessWidget {
                 ? () => focusNodes[i + 1].requestFocus()
                 : null,
             onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
+            isPrefixLocked: lockFirstTile && i == 0,
           ),
       ],
     );

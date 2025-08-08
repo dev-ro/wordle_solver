@@ -13,6 +13,7 @@ class FeedbackTile extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback? onMoveNext;
   final VoidCallback? onMovePrev;
+  final bool isPrefixLocked;
 
   const FeedbackTile({
     super.key,
@@ -25,6 +26,7 @@ class FeedbackTile extends StatelessWidget {
     required this.focusNode,
     this.onMoveNext,
     this.onMovePrev,
+    this.isPrefixLocked = false,
   });
 
   Color _bgColor(BuildContext context) {
@@ -73,6 +75,7 @@ class FeedbackTile extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
         controller: controller,
+        readOnly: isPrefixLocked,
         onChanged: (v) {
           onLetterChanged(v.toLowerCase());
           if (v.isNotEmpty) {
@@ -88,7 +91,7 @@ class FeedbackTile extends StatelessWidget {
           width: side,
           height: side,
           decoration: BoxDecoration(
-            color: _bgColor(context),
+            color: isPrefixLocked ? Colors.lightBlueAccent : _bgColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -101,8 +104,9 @@ class FeedbackTile extends StatelessWidget {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: onTap,
-            onLongPress: onLongPress,
+            // Only toggle feedback on long press to avoid unexpected changes
+            onTap: null,
+            onLongPress: onLongPress ?? onTap,
           ),
         ),
       ],

@@ -16,44 +16,41 @@ class HomeScreen extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth > 700;
-        final body = isWide
-            ? Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _GridSection(state: state, controller: controller),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: _RecommendationsSection(
-                      state: state,
-                      controller: controller,
-                    ),
-                  ),
-                ],
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _GridSection(state: state, controller: controller),
-                    const SizedBox(height: 24),
-                    _RecommendationsSection(
-                      state: state,
-                      controller: controller,
-                    ),
-                  ],
-                ),
-              );
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Wordle Solver'),
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        final body = SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _GridSection(state: state, controller: controller),
+              const SizedBox(height: 24),
+              _RecommendationsSection(
+                state: state,
+                controller: controller,
+              ),
+            ],
           ),
-          body: body,
+        );
+
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFECF6FF), Color(0xFFFFF0F6)],
+            ),
+          ),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: const Text('Wordle Solver'),
+            ),
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: body,
+              ),
+            ),
+          ),
         );
       },
     );
@@ -246,6 +243,7 @@ class _FocusableFeedbackRow extends StatefulWidget {
 
 class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   late List<FocusNode> _nodes;
+  late final FocusScopeNode _rowScope = FocusScopeNode();
 
   @override
   void initState() {
@@ -277,6 +275,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
 
   @override
   void dispose() {
+    _rowScope.dispose();
     for (final n in _nodes) {
       n.dispose();
     }
@@ -285,12 +284,26 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
 
   @override
   Widget build(BuildContext context) {
-    return FeedbackRow(
-      tiles: widget.tiles,
-      onToggleFeedback: widget.onToggleFeedback,
-      onLetterChanged: widget.onLetterChanged,
-      maxWidth: widget.maxWidth,
-      focusNodes: _nodes,
+    // Allow typing anywhere to flow through focused tile; tap anywhere on row to focus first empty
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        final firstEmptyIndex = widget.tiles.indexWhere((t) => t.letter.isEmpty);
+        final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+        _nodes[targetIndex].requestFocus();
+      },
+      child: FocusScope(
+        node: _rowScope,
+        autofocus: true,
+        child: FeedbackRow(
+          tiles: widget.tiles,
+          onToggleFeedback: widget.onToggleFeedback,
+          onLetterChanged: widget.onLetterChanged,
+          maxWidth: widget.maxWidth,
+          focusNodes: _nodes,
+          lockFirstTile: true,
+        ),
+      ),
     );
   }
 }
