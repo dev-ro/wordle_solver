@@ -32,7 +32,7 @@ jobs:
               run: flutter analyze --fatal-infos
 
             - name: Check Flutter formatting
-              run: ./scripts/format.sh
+              run: bash scripts/format.sh
 
             - name: Run Flutter tests
               run: flutter test --coverage
