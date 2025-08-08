@@ -267,8 +267,8 @@ class _GridSection extends StatelessWidget {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.tips_and_updates),
-                    label: const Text('Recommend'),
+                        : const Icon(Icons.send_rounded),
+                    label: const Text('Submit'),
                   ),
                 ],
               ),

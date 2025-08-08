@@ -98,7 +98,7 @@ class FeedbackTile extends StatelessWidget {
           width: side,
           height: side,
           decoration: BoxDecoration(
-            color: isPrefixLocked ? const Color(0xFF1F3B54) : _bgColor(context),
+            color: _bgColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
