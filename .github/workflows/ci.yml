@@ -106,9 +106,28 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Run security scan (skipped)
-              run: echo "Skipping SecureCodeWarrior SARIF upload due to repository not found"
-              continue-on-error: true
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: '3.12'
+
+            - name: Python dependency vulnerabilities (pip-audit)
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pip-audit
+                  pip-audit -r functions/requirements.txt
+
+            - name: Install OSV-Scanner
+              run: |
+                  curl -sSfL https://github.com/google/osv-scanner/releases/download/v1.7.4/osv-scanner_1.7.4_linux_amd64.tar.gz -o osv.tar.gz
+                  tar -xzf osv.tar.gz osv-scanner
+                  sudo mv osv-scanner /usr/local/bin/
+
+            - name: Scan manifests with OSV-Scanner (Dart/Python)
+              run: |
+                  # Scan Flutter/Dart and Python manifests/locks
+                  if [ -f "pubspec.lock" ]; then osv-scanner -L -r . --sbom=false; fi
+                  if [ -f "functions/requirements.txt" ]; then osv-scanner -r functions; fi
 
             - name: Check for secrets
               uses: trufflesecurity/trufflehog@main
