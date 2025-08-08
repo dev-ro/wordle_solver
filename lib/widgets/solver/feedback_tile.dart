@@ -57,6 +57,7 @@ class FeedbackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController(text: letter.toUpperCase());
+    final bool isLocked = isPrefixLocked || feedback == TileFeedback.green;
     final textField = Focus(
       focusNode: focusNode,
       onKeyEvent: (node, event) {
@@ -79,7 +80,7 @@ class FeedbackTile extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
         controller: controller,
-        readOnly: isPrefixLocked,
+        readOnly: isLocked,
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
         ],
@@ -115,9 +116,9 @@ class FeedbackTile extends StatelessWidget {
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             // Tap to select; double tap cycles; long press also cycles
-            onTap: onTap,
-            onDoubleTap: onDoubleTap,
-            onLongPress: onLongPress ?? onDoubleTap ?? onTap,
+            onTap: isLocked ? null : onTap,
+            onDoubleTap: isLocked ? null : onDoubleTap,
+            onLongPress: isLocked ? null : (onLongPress ?? onDoubleTap ?? onTap),
           ),
         ),
       ],
