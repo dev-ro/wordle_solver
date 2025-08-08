@@ -32,11 +32,11 @@ class FeedbackTile extends StatelessWidget {
   Color _bgColor(BuildContext context) {
     switch (feedback) {
       case TileFeedback.green:
-        return Colors.green;
+        return const Color(0xFF2E7D32); // deeper green for dark theme
       case TileFeedback.yellow:
-        return Colors.amber;
+        return const Color(0xFFF9A825); // deeper amber
       case TileFeedback.black:
-        return Theme.of(context).colorScheme.surfaceContainerHighest;
+        return const Color(0xFF1C1D22);
     }
   }
 
@@ -91,11 +91,9 @@ class FeedbackTile extends StatelessWidget {
           width: side,
           height: side,
           decoration: BoxDecoration(
-            color: isPrefixLocked ? Colors.lightBlueAccent : _bgColor(context),
+            color: isPrefixLocked ? const Color(0xFF1F3B54) : _bgColor(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
+            border: Border.all(color: isPrefixLocked ? const Color(0xFF89CFF0) : Colors.white24, width: 1.5),
           ),
           alignment: Alignment.center,
           child: textField,

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/solver_state.dart';
 import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
+import '../widgets/common/aurora.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,8 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _TopControls(state: state, controller: controller),
+              const SizedBox(height: 16),
               _GridSection(state: state, controller: controller),
               const SizedBox(height: 24),
               _RecommendationsSection(
@@ -33,16 +36,23 @@ class HomeScreen extends ConsumerWidget {
 
         return Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFECF6FF), Color(0xFFFFF0F6)],
+            gradient: RadialGradient(
+              center: Alignment(0, -0.25),
+              radius: 1.2,
+              colors: [Color(0xFF1F2540), Color(0xFF0A0B0D)],
+              stops: [0.0, 1.0],
             ),
           ),
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: AppBar(
-              title: const Text('Wordle Solver'),
+              title: const Text('Wordle Solver',
+                  style: TextStyle(
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 2)),
+                    ],
+                  )),
             ),
             body: Center(
               child: ConstrainedBox(
@@ -57,6 +67,85 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+class _TopControls extends StatelessWidget {
+  final SolverUiState state;
+  final SolverController controller;
+
+  const _TopControls({required this.state, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return AuroraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Length: ${state.config.wordLength}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: Colors.white)),
+                    Slider(
+                      min: 3,
+                      max: 20,
+                      divisions: 17,
+                      value: state.config.wordLength.toDouble(),
+                      onChanged: (v) => controller.setWordLength(v.round()),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Prefix (optional)',
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  onChanged: controller.setPrefix,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<String>(
+                  value: state.config.dictionary,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'english.json',
+                      child: Text('English'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'spanish.json',
+                      child: Text('Spanish'),
+                    ),
+                  ],
+                  dropdownColor: const Color(0xFF1A1B1F),
+                  onChanged: (v) {
+                    if (v != null) controller.setDictionary(v);
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Dictionary',
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _GridSection extends StatelessWidget {
   final SolverUiState state;
   final SolverController controller;
@@ -66,66 +155,12 @@ class _GridSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasPrefix = (state.config.prefix ?? '').isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Length: ${state.config.wordLength}',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                  Slider(
-                    min: 3,
-                    max: 20,
-                    divisions: 17,
-                    value: state.config.wordLength.toDouble(),
-                    onChanged: (v) => controller.setWordLength(v.round()),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Prefix (optional)',
-                ),
-                onChanged: controller.setPrefix,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: DropdownButtonFormField<String>(
-                value: state.config.dictionary,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'english.json',
-                    child: Text('English'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'spanish.json',
-                    child: Text('Spanish'),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v != null) controller.setDictionary(v);
-                },
-                decoration: const InputDecoration(labelText: 'Dictionary'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+        if (hasPrefix)
+          AuroraCard(
             child: Column(
               children: [
                 LayoutBuilder(
@@ -135,10 +170,8 @@ class _GridSection extends StatelessWidget {
                         for (int r = 0; r < state.grid.length; r++) ...[
                           _FocusableFeedbackRow(
                             tiles: state.grid[r],
-                            onToggleFeedback: (i) =>
-                                controller.toggleFeedback(i),
-                            onLetterChanged: (i, v) =>
-                                controller.setLetter(i, v),
+                            onToggleFeedback: (i) => controller.toggleFeedback(i),
+                            onLetterChanged: (i, v) => controller.setLetter(i, v),
                             maxWidth: c.maxWidth - 32, // inner padding margin
                           ),
                           if (r != state.grid.length - 1)
@@ -186,7 +219,6 @@ class _GridSection extends StatelessWidget {
               ],
             ),
           ),
-        ),
       ],
     );
   }
