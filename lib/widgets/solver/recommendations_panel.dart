@@ -101,8 +101,8 @@ class RecommendationsPanel extends StatelessWidget {
                       cursor: SystemMouseCursors.click,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF15151A).withOpacity(0.5),
+                         decoration: BoxDecoration(
+                           color: const Color(0xFF15151A).withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white24, width: 1),
                         ),

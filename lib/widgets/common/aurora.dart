@@ -10,7 +10,7 @@ const LinearGradient kAuroraGradient = LinearGradient(
 /// Semi-transparent dark glass background for cards.
 BoxDecoration glassDecoration({double radius = 16, double opacity = 0.28}) {
   return BoxDecoration(
-    color: const Color(0xFF0E0E12).withOpacity(opacity),
+    color: const Color(0xFF0E0E12).withValues(alpha: opacity),
     borderRadius: BorderRadius.circular(radius),
     boxShadow: const [
       BoxShadow(
@@ -104,7 +104,9 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF89CFF0).withOpacity(widget.emphasize ? 0.35 : (_hovered ? 0.3 : 0.18)),
+                  color: const Color(0xFF89CFF0).withValues(
+                    alpha: widget.emphasize ? 0.35 : (_hovered ? 0.3 : 0.18),
+                  ),
                   blurRadius: widget.emphasize ? 22 : 16,
                   spreadRadius: 1,
                 ),
@@ -114,7 +116,7 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
               margin: EdgeInsets.all(widget.borderWidth),
               padding: widget.padding,
               decoration: BoxDecoration(
-                color: const Color(0xFF15151A).withOpacity(0.55),
+                color: const Color(0xFF15151A).withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(widget.borderRadius - widget.borderWidth),
               ),
               child: widget.child,

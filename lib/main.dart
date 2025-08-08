@@ -56,7 +56,7 @@ class WordleSolverApp extends StatelessWidget {
           activeTrackColor: const Color(0xFF89CFF0),
           inactiveTrackColor: Colors.white24,
           thumbColor: Colors.white,
-          overlayColor: const Color(0xFF89CFF0).withOpacity(0.15),
+          overlayColor: const Color(0xFF89CFF0).withValues(alpha: 0.15),
         ),
       ),
       darkTheme: ThemeData.dark(useMaterial3: true),
