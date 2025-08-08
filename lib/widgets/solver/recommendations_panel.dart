@@ -26,9 +26,15 @@ class RecommendationsPanel extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        if (response == null || response!.recommendations.isEmpty) ...[
+        if (response == null) ...[
           Text(
             'Tap Recommend to get suggestions',
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+        ] else if (response!.recommendations.isEmpty) ...[
+          Text(
+            'No recommendations yet. Try adjusting input or press Recommend again.',
             style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
             textAlign: TextAlign.center,
           ),

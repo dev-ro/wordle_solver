@@ -180,39 +180,41 @@ class _GridSection extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 16),
-              // Color selector: Black, Green, Yellow
+              // Color selector: Green, Yellow (tap same color twice -> black)
               Center(
                 child: Wrap(
                   spacing: 12,
                   children: [
                     _ColorPickTile(
-                      color: const Color(0xFF1C1D22),
-                      borderColor: Colors.white24,
-                      label: 'Black',
-                      onTap: () {
-                        final idx = state.selectedIndex ?? 0;
-                        controller.setTileFeedback(idx, TileFeedback.black);
-                      },
-                    ),
-                    _ColorPickTile(
                       color: const Color(0xFF2E7D32),
                       borderColor: Colors.white24,
-                      label: 'Green',
+                      label: 'Green (2)',
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
-                        controller.setTileFeedback(idx, TileFeedback.green);
+                        final current = state.grid.last[idx].feedback;
+                        controller.setTileFeedback(idx,
+                            current == TileFeedback.green ? TileFeedback.black : TileFeedback.green);
                       },
                     ),
                     _ColorPickTile(
                       color: const Color(0xFFF9A825),
                       borderColor: Colors.white24,
-                      label: 'Yellow',
+                      label: 'Yellow (3)',
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
-                        controller.setTileFeedback(idx, TileFeedback.yellow);
+                        final current = state.grid.last[idx].feedback;
+                        controller.setTileFeedback(idx,
+                            current == TileFeedback.yellow ? TileFeedback.black : TileFeedback.yellow);
                       },
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Center(
+                child: Text(
+                  'Shortcuts: 1=Black, 2=Green, 3=Yellow',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ),
               const SizedBox(height: 8),
@@ -410,8 +412,12 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
             focusNodes: _nodes,
             lockFirstTile: true,
             selectedIndex: uiState.selectedIndex,
-            onSelect: ctrl.selectTile,
-            onDoubleTap: ctrl.cycleFeedback,
+            onSelect: (i) {
+              ctrl.selectTile(i);
+            },
+            onDoubleTap: (i) {
+              ctrl.cycleFeedback(i);
+            },
           );
         }),
       ),

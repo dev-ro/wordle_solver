@@ -56,6 +56,7 @@ class FeedbackRow extends StatelessWidget {
             isPrefixLocked: lockFirstTile && i == 0,
             isSelected: selectedIndex == i,
             onDoubleTap: () => onDoubleTap(i),
+            onShortcutColor: (fb) => onSelect(i),
           ),
       ],
     );
