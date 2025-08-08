@@ -212,32 +212,27 @@ class _GridSection extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Theme.of(context).platform == TargetPlatform.iOS
-                    ? CupertinoButton.filled(
-                        onPressed: state.isLoading
-                            ? null
-                            : controller.requestRecommendations,
-                        child: state.isLoading
-                            ? const CupertinoActivityIndicator()
-                            : const Text('Recommend'),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: state.isLoading
-                            ? null
-                            : controller.requestRecommendations,
-                        icon: state.isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.tips_and_updates),
-                        label: const Text('Recommend'),
-                      ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: state.isLoading ? null : controller.resetGame,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('New Game'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: state.isLoading ? null : controller.requestRecommendations,
+                    icon: state.isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.tips_and_updates),
+                    label: const Text('Recommend'),
+                  ),
+                ],
               ),
               if (state.errorMessage != null) ...[
                 const SizedBox(height: 8),
