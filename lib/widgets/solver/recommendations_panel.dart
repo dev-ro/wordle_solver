@@ -49,7 +49,7 @@ class RecommendationsPanel extends StatelessWidget {
                 crossAxisCount: 3,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 2.8,
+                childAspectRatio: 1.15,
               ),
               itemCount: recs.length.clamp(0, 9),
               itemBuilder: (context, index) {
@@ -57,13 +57,25 @@ class RecommendationsPanel extends StatelessWidget {
                 return AuroraHoverTile(
                   emphasize: index == 0,
                   onTap: () => onSelectWord(r.word),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(r.word.toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                      Text(r.score.toStringAsFixed(2),
-                          style: const TextStyle(color: Colors.white70)),
+                      Text(
+                        r.word.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        r.score.toStringAsFixed(2),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 );
