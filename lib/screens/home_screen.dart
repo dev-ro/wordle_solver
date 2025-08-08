@@ -180,6 +180,42 @@ class _GridSection extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 16),
+              // Color selector: Black, Green, Yellow
+              Center(
+                child: Wrap(
+                  spacing: 12,
+                  children: [
+                    _ColorPickTile(
+                      color: const Color(0xFF1C1D22),
+                      borderColor: Colors.white24,
+                      label: 'Black',
+                      onTap: () {
+                        final idx = state.selectedIndex ?? 0;
+                        controller.setTileFeedback(idx, TileFeedback.black);
+                      },
+                    ),
+                    _ColorPickTile(
+                      color: const Color(0xFF2E7D32),
+                      borderColor: Colors.white24,
+                      label: 'Green',
+                      onTap: () {
+                        final idx = state.selectedIndex ?? 0;
+                        controller.setTileFeedback(idx, TileFeedback.green);
+                      },
+                    ),
+                    _ColorPickTile(
+                      color: const Color(0xFFF9A825),
+                      borderColor: Colors.white24,
+                      label: 'Yellow',
+                      onTap: () {
+                        final idx = state.selectedIndex ?? 0;
+                        controller.setTileFeedback(idx, TileFeedback.yellow);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
                 child: Theme.of(context).platform == TargetPlatform.iOS
@@ -222,6 +258,45 @@ class _GridSection extends StatelessWidget {
   }
 }
 
+class _ColorPickTile extends StatelessWidget {
+  final Color color;
+  final Color borderColor;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ColorPickTile({
+    required this.color,
+    required this.borderColor,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor, width: 1.5),
+              boxShadow: const [
+                BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
 class _RecommendationsSection extends StatelessWidget {
   final SolverUiState state;
   final SolverController controller;
@@ -259,7 +334,6 @@ class _FocusableFeedbackRow extends StatefulWidget {
   final void Function(int index) onToggleFeedback;
   final void Function(int index, String letter) onLetterChanged;
   final double maxWidth;
-
   const _FocusableFeedbackRow({
     required this.tiles,
     required this.onToggleFeedback,
@@ -325,14 +399,21 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
       child: FocusScope(
         node: _rowScope,
         autofocus: true,
-        child: FeedbackRow(
-          tiles: widget.tiles,
-          onToggleFeedback: widget.onToggleFeedback,
-          onLetterChanged: widget.onLetterChanged,
-          maxWidth: widget.maxWidth,
-          focusNodes: _nodes,
-          lockFirstTile: true,
-        ),
+        child: Consumer(builder: (context, ref, _) {
+          final uiState = ref.watch(solverControllerProvider);
+          final ctrl = ref.read(solverControllerProvider.notifier);
+          return FeedbackRow(
+            tiles: widget.tiles,
+            onToggleFeedback: widget.onToggleFeedback,
+            onLetterChanged: widget.onLetterChanged,
+            maxWidth: widget.maxWidth,
+            focusNodes: _nodes,
+            lockFirstTile: true,
+            selectedIndex: uiState.selectedIndex,
+            onSelect: ctrl.selectTile,
+            onDoubleTap: ctrl.cycleFeedback,
+          );
+        }),
       ),
     );
   }

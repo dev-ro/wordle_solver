@@ -14,6 +14,8 @@ class FeedbackTile extends StatelessWidget {
   final VoidCallback? onMoveNext;
   final VoidCallback? onMovePrev;
   final bool isPrefixLocked;
+  final bool isSelected;
+  final VoidCallback? onDoubleTap;
 
   const FeedbackTile({
     super.key,
@@ -27,6 +29,8 @@ class FeedbackTile extends StatelessWidget {
     this.onMoveNext,
     this.onMovePrev,
     this.isPrefixLocked = false,
+    this.isSelected = false,
+    this.onDoubleTap,
   });
 
   Color _bgColor(BuildContext context) {
@@ -91,9 +95,14 @@ class FeedbackTile extends StatelessWidget {
           width: side,
           height: side,
           decoration: BoxDecoration(
-            color: isPrefixLocked ? const Color(0xFF1F3B54) : _bgColor(context),
+            color: _bgColor(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isPrefixLocked ? const Color(0xFF89CFF0) : Colors.white24, width: 1.5),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF89CFF0)
+                  : (isPrefixLocked ? const Color(0xFF89CFF0) : Colors.white24),
+              width: 1.5,
+            ),
           ),
           alignment: Alignment.center,
           child: textField,
@@ -102,9 +111,10 @@ class FeedbackTile extends StatelessWidget {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            // Only toggle feedback on long press to avoid unexpected changes
-            onTap: null,
-            onLongPress: onLongPress ?? onTap,
+            // Tap to select; double tap cycles; long press also cycles
+            onTap: onTap,
+            onDoubleTap: onDoubleTap,
+            onLongPress: onLongPress ?? onDoubleTap ?? onTap,
           ),
         ),
       ],
