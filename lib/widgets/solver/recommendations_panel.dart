@@ -90,28 +90,7 @@ class RecommendationsPanel extends StatelessWidget {
               ],
             ),
           ),
-          if (response!.fillerSuggestions.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Filler suggestions',
-              style: theme.textTheme.titleSmall?.copyWith(color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: response!.fillerSuggestions
-                  .map(
-                    (w) => AuroraHoverTile(
-                      child: Text(w, style: const TextStyle(color: Colors.white)),
-                      onTap: () => onSelectWord(w),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
+          // Filler suggestions are intentionally not auto-shown here.
         ],
       ],
     );

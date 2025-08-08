@@ -101,15 +101,17 @@ class _TopControls extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
+              SizedBox(
+                width: 140,
                 child: TextField(
                   decoration: const InputDecoration(
-                    labelText: 'Prefix (optional)',
+                    labelText: 'Prefix (1 char optional)',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
+                  maxLength: 1,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => const SizedBox.shrink(),
                   style: const TextStyle(color: Colors.white),
-                  onChanged: controller.setPrefix,
+                  onChanged: (v) => controller.setPrefix(v.isEmpty ? null : v[0].toLowerCase()),
                 ),
               ),
               const SizedBox(width: 12),
@@ -211,12 +213,6 @@ class _GridSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Center(
-                child: Text(
-                  'Shortcuts: 1=Black, 2=Green, 3=Yellow',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12),
-                ),
-              ),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
@@ -410,7 +406,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
             onLetterChanged: widget.onLetterChanged,
             maxWidth: widget.maxWidth,
             focusNodes: _nodes,
-            lockFirstTile: true,
+            lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
             selectedIndex: uiState.selectedIndex,
             onSelect: (i) {
               ctrl.selectTile(i);

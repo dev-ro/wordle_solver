@@ -16,7 +16,6 @@ class FeedbackTile extends StatelessWidget {
   final bool isPrefixLocked;
   final bool isSelected;
   final VoidCallback? onDoubleTap;
-  final ValueChanged<TileFeedback>? onShortcutColor;
 
   const FeedbackTile({
     super.key,
@@ -32,7 +31,6 @@ class FeedbackTile extends StatelessWidget {
     this.isPrefixLocked = false,
     this.isSelected = false,
     this.onDoubleTap,
-    this.onShortcutColor,
   });
 
   Color _bgColor(BuildContext context) {
@@ -67,20 +65,6 @@ class FeedbackTile extends StatelessWidget {
             controller.text.isEmpty) {
           onMovePrev?.call();
           return KeyEventResult.handled;
-        }
-        if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.digit2 || event.logicalKey.keyLabel == '2') {
-            onShortcutColor?.call(TileFeedback.green);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.digit3 || event.logicalKey.keyLabel == '3') {
-            onShortcutColor?.call(TileFeedback.yellow);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.digit1 || event.logicalKey.keyLabel == '1') {
-            onShortcutColor?.call(TileFeedback.black);
-            return KeyEventResult.handled;
-          }
         }
         return KeyEventResult.ignored;
       },
