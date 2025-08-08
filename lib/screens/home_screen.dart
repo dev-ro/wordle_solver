@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/solver_state.dart';
@@ -26,10 +27,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _GridSection(state: state, controller: controller),
               const SizedBox(height: 24),
-              _RecommendationsSection(
-                state: state,
-                controller: controller,
-              ),
+              _RecommendationsSection(state: state, controller: controller),
             ],
           ),
         );
@@ -46,13 +44,19 @@ class HomeScreen extends ConsumerWidget {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: AppBar(
-              title: const Text('Wordle Solver',
-                  style: TextStyle(
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(color: Colors.black54, blurRadius: 8, offset: Offset(0, 2)),
-                    ],
-                  )),
+              title: const Text(
+                'Wordle Solver',
+                style: TextStyle(
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
             ),
             body: Center(
               child: ConstrainedBox(
@@ -85,11 +89,12 @@ class _TopControls extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Length: ${state.config.wordLength}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
-                            ?.copyWith(color: Colors.white)),
+                    Text(
+                      'Length: ${state.config.wordLength}',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium?.copyWith(color: Colors.white),
+                    ),
                     Slider(
                       min: 3,
                       max: 20,
@@ -109,9 +114,17 @@ class _TopControls extends StatelessWidget {
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   maxLength: 1,
-                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => const SizedBox.shrink(),
+                  buildCounter:
+                      (
+                        _, {
+                        required currentLength,
+                        required isFocused,
+                        maxLength,
+                      }) => const SizedBox.shrink(),
                   style: const TextStyle(color: Colors.white),
-                  onChanged: (v) => controller.setPrefix(v.isEmpty ? null : v[0].toLowerCase()),
+                  onChanged: (v) => controller.setPrefix(
+                    v.isEmpty ? null : v[0].toLowerCase(),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -139,6 +152,21 @@ class _TopControls extends StatelessWidget {
                   ),
                   style: const TextStyle(color: Colors.white),
                 ),
+              ),
+              const SizedBox(width: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Auto-copy',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch.adaptive(
+                    value: state.config.autoCopyOnSelect,
+                    onChanged: (v) => controller.setAutoCopyOnSelect(v),
+                  ),
+                ],
               ),
             ],
           ),
@@ -193,8 +221,12 @@ class _GridSection extends StatelessWidget {
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
                         final current = state.grid.last[idx].feedback;
-                        controller.setTileFeedback(idx,
-                            current == TileFeedback.green ? TileFeedback.black : TileFeedback.green);
+                        controller.setTileFeedback(
+                          idx,
+                          current == TileFeedback.green
+                              ? TileFeedback.black
+                              : TileFeedback.green,
+                        );
                       },
                     ),
                     _ColorPickTile(
@@ -203,8 +235,12 @@ class _GridSection extends StatelessWidget {
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
                         final current = state.grid.last[idx].feedback;
-                        controller.setTileFeedback(idx,
-                            current == TileFeedback.yellow ? TileFeedback.black : TileFeedback.yellow);
+                        controller.setTileFeedback(
+                          idx,
+                          current == TileFeedback.yellow
+                              ? TileFeedback.black
+                              : TileFeedback.yellow,
+                        );
                       },
                     ),
                   ],
@@ -222,7 +258,9 @@ class _GridSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
-                    onPressed: state.isLoading ? null : controller.requestRecommendations,
+                    onPressed: state.isLoading
+                        ? null
+                        : controller.requestRecommendations,
                     icon: state.isLoading
                         ? const SizedBox(
                             width: 16,
@@ -274,7 +312,11 @@ class _ColorPickTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: borderColor, width: 1.5),
               boxShadow: const [
-                BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
               ],
             ),
           ),
@@ -308,6 +350,19 @@ class _RecommendationsSection extends StatelessWidget {
               i++
             ) {
               controller.setLetter(i, word[i]);
+            }
+
+            // Auto-copy to clipboard if enabled
+            if (state.config.autoCopyOnSelect) {
+              final textToCopy = '!${word.toLowerCase()}';
+              Clipboard.setData(ClipboardData(text: textToCopy));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${word.toLowerCase()} copied to clipboard!'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             }
           },
         ),
@@ -379,32 +434,36 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
-        final firstEmptyIndex = widget.tiles.indexWhere((t) => t.letter.isEmpty);
+        final firstEmptyIndex = widget.tiles.indexWhere(
+          (t) => t.letter.isEmpty,
+        );
         final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
         _nodes[targetIndex].requestFocus();
       },
       child: FocusScope(
         node: _rowScope,
         autofocus: true,
-        child: Consumer(builder: (context, ref, _) {
-          final uiState = ref.watch(solverControllerProvider);
-          final ctrl = ref.read(solverControllerProvider.notifier);
-          return FeedbackRow(
-            tiles: widget.tiles,
-            onToggleFeedback: widget.onToggleFeedback,
-            onLetterChanged: widget.onLetterChanged,
-            maxWidth: widget.maxWidth,
-            focusNodes: _nodes,
-            lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
-            selectedIndex: uiState.selectedIndex,
-            onSelect: (i) {
-              ctrl.selectTile(i);
-            },
-            onDoubleTap: (i) {
-              ctrl.cycleFeedback(i);
-            },
-          );
-        }),
+        child: Consumer(
+          builder: (context, ref, _) {
+            final uiState = ref.watch(solverControllerProvider);
+            final ctrl = ref.read(solverControllerProvider.notifier);
+            return FeedbackRow(
+              tiles: widget.tiles,
+              onToggleFeedback: widget.onToggleFeedback,
+              onLetterChanged: widget.onLetterChanged,
+              maxWidth: widget.maxWidth,
+              focusNodes: _nodes,
+              lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
+              selectedIndex: uiState.selectedIndex,
+              onSelect: (i) {
+                ctrl.selectTile(i);
+              },
+              onDoubleTap: (i) {
+                ctrl.cycleFeedback(i);
+              },
+            );
+          },
+        ),
       ),
     );
   }
