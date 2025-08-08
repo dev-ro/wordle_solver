@@ -8,7 +8,6 @@ from typing import Dict, List, Tuple, Optional, Any
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app, storage
-from firebase_admin.exceptions import FirebaseError
 
 # For cost control and performance optimization
 set_global_options(max_instances=10, min_instances=1)
@@ -381,15 +380,12 @@ def calculate_next_move(req: https_fn.CallableRequest) -> Dict[str, Any]:
         variable_positions = find_variable_letter_positions(possible_words)
 
         # Collect variable letters for filler suggestions
-        variable_letters = set()
-        for letters in variable_positions.values():
-            variable_letters.update(letters)
+        variable_letters = set().union(*variable_positions.values())
 
         # Find filler words if we have variable letters
         filler_suggestions = []
         if variable_letters and len(possible_words) > 10:
             # Find words from full dictionary that contain variable letters
-            variable_letter_str = "".join(sorted(variable_letters))
             filler_candidates = [
                 word
                 for word in dictionary
@@ -424,7 +420,7 @@ def calculate_next_move(req: https_fn.CallableRequest) -> Dict[str, Any]:
 
     except ValueError as e:
         return {"error": "INVALID_ARGUMENT", "message": str(e)}
-    except Exception as e:
+    except Exception:
         return {"error": "INTERNAL_ERROR", "message": "An unexpected error occurred"}
 
 
