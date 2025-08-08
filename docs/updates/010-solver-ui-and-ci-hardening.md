@@ -24,7 +24,8 @@ Improved the solver UX with auto-copy and submission flow, aligned board feedbac
 ### CI Hardening
 - Replaced deprecated `withOpacity` calls with `withValues(alpha: ...)`
 - Removed unnecessary imports to satisfy the analyzer
-- Added workflow rule to always run `dart format .` before creating PRs
+- Added workflow rule to always run `dart format .` immediately before creating PRs
+- Clarified the mandate that the last two steps are always: format, then commit (and if further edits occur, format again before committing)
 
 ## Why These Changes Matter
 

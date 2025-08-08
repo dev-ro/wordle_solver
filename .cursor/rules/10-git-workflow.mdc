@@ -73,6 +73,15 @@ git checkout -b \<branch-name\>
 
 As you work, make small, logical commits using the standards defined above.
 
+#### MANDATORY: Format, then Commit (Final Two Steps)
+
+- The final two steps before ANY commit that includes Dart changes are:
+  1) `dart format .`
+  2) Commit
+
+- Do NOT commit and then format. Always format immediately before the commit.
+- If you make additional edits after formatting, format again before committing.
+
 ### Step 3: Create an Issue (For feat and fix only)
 
 This workflow requires creating an issue *after* the work is committed. This links the code change to a trackable work item on GitHub.
@@ -91,13 +100,17 @@ Once your work is ready for review, push your branch and open a PR.
 
 ### REQUIRED: Format Dart code before opening PR
 
-You MUST run code formatting prior to creating a PR to prevent CI failures:
+You MUST run code formatting immediately before creating a PR to prevent CI failures:
 
 ```bash
 dart format .
 ```
 
-Run this from the repository root. Do not skip this step.
+Run this from the repository root.
+
+IMPORTANT:
+- If you make any changes after formatting, you MUST run `dart format .` again before committing and before opening the PR.
+- The last two steps before pushing are always: format, then commit.
 
 ### Push your new branch to the remote repository
 
