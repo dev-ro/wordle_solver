@@ -136,7 +136,7 @@ jobs:
 
             - name: Install trufflehog (go install)
               run: |
-                  go install github.com/trufflesecurity/trufflehog@latest
+                  go install github.com/trufflesecurity/trufflehog/v3@latest
                   echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
             - name: Secret scan (trufflehog filesystem)
