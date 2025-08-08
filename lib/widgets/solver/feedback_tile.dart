@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../state/solver_state.dart';
 
@@ -53,16 +54,11 @@ class FeedbackTile extends StatelessWidget {
     final textField = Focus(
       focusNode: focusNode,
       onKeyEvent: (node, event) {
-        // Handle backspace navigation when empty
-        if (event.logicalKey == LogicalKeyboardKey.backspace &&
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace &&
             controller.text.isEmpty) {
-    final textField = Focus(
-      focusNode: widget.focusNode,
-      onKeyEvent: (node, event) {
-        // Handle backspace navigation when empty
-        if (event.logicalKey.keyLabel.toLowerCase() == 'backspace' &&
-            _controller.text.isEmpty) {
-          widget.onMovePrev?.call();
+          onMovePrev?.call();
+          return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
@@ -78,7 +74,6 @@ class FeedbackTile extends StatelessWidget {
         ),
         controller: controller,
         onChanged: (v) {
-          // Store lowercase in state
           onLetterChanged(v.toLowerCase());
           if (v.isNotEmpty) {
             onMoveNext?.call();
