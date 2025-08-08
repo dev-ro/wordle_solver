@@ -155,70 +155,68 @@ class _GridSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasPrefix = (state.config.prefix ?? '').isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (hasPrefix)
-          AuroraCard(
-            child: Column(
-              children: [
-                LayoutBuilder(
-                  builder: (context, c) {
-                    return Column(
-                      children: [
-                        for (int r = 0; r < state.grid.length; r++) ...[
-                          _FocusableFeedbackRow(
-                            tiles: state.grid[r],
-                            onToggleFeedback: (i) => controller.toggleFeedback(i),
-                            onLetterChanged: (i, v) => controller.setLetter(i, v),
-                            maxWidth: c.maxWidth - 32, // inner padding margin
-                          ),
-                          if (r != state.grid.length - 1)
-                            const SizedBox(height: 12),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Theme.of(context).platform == TargetPlatform.iOS
-                      ? CupertinoButton.filled(
-                          onPressed: state.isLoading
-                              ? null
-                              : controller.requestRecommendations,
-                          child: state.isLoading
-                              ? const CupertinoActivityIndicator()
-                              : const Text('Recommend'),
-                        )
-                      : ElevatedButton.icon(
-                          onPressed: state.isLoading
-                              ? null
-                              : controller.requestRecommendations,
-                          icon: state.isLoading
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.tips_and_updates),
-                          label: const Text('Recommend'),
+        AuroraCard(
+          child: Column(
+            children: [
+              LayoutBuilder(
+                builder: (context, c) {
+                  return Column(
+                    children: [
+                      for (int r = 0; r < state.grid.length; r++) ...[
+                        _FocusableFeedbackRow(
+                          tiles: state.grid[r],
+                          onToggleFeedback: (i) => controller.toggleFeedback(i),
+                          onLetterChanged: (i, v) => controller.setLetter(i, v),
+                          maxWidth: c.maxWidth - 32, // inner padding margin
                         ),
+                        if (r != state.grid.length - 1)
+                          const SizedBox(height: 12),
+                      ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Theme.of(context).platform == TargetPlatform.iOS
+                    ? CupertinoButton.filled(
+                        onPressed: state.isLoading
+                            ? null
+                            : controller.requestRecommendations,
+                        child: state.isLoading
+                            ? const CupertinoActivityIndicator()
+                            : const Text('Recommend'),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: state.isLoading
+                            ? null
+                            : controller.requestRecommendations,
+                        icon: state.isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.tips_and_updates),
+                        label: const Text('Recommend'),
+                      ),
+              ),
+              if (state.errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.errorMessage!,
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
-                if (state.errorMessage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    state.errorMessage!,
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
+        ),
       ],
     );
   }
