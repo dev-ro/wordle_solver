@@ -3,7 +3,7 @@
 
 import json
 from collections import Counter
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Set
 
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
@@ -259,7 +259,7 @@ def recommend_guesses(
     return scored_words[:n]
 
 
-def find_variable_letter_positions(word_list: List[str]) -> Dict[int, set]:
+def find_variable_letter_positions(word_list: List[str]) -> Dict[int, Set[str]]:
     """
     Find positions where letters vary across the word list.
 
@@ -273,7 +273,7 @@ def find_variable_letter_positions(word_list: List[str]) -> Dict[int, set]:
         return {}
 
     word_length = len(word_list[0])
-    variable_positions = {i: set() for i in range(word_length)}
+    variable_positions: Dict[int, Set[str]] = {i: set() for i in range(word_length)}
 
     for word in word_list:
         for i, letter in enumerate(word):
