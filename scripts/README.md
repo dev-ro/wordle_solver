@@ -47,6 +47,15 @@ Available targets:
 ./scripts/upload-dictionaries.sh
 ```
 
+### `./scripts/format.sh`
+**Format Dart code (CI-consistent)**
+
+Runs `dart format --set-exit-if-changed .` to ensure consistent formatting locally and in CI.
+
+```bash
+./scripts/format.sh
+```
+
 ## 📋 Prerequisites
 
 ### Required Tools:
