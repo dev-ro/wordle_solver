@@ -39,22 +39,37 @@ class RecommendationsPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ] else ...[
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (int i = 0; i < response!.recommendations.length; i++)
-                AuroraHoverTile(
-                  emphasize: i == 0,
-                  onTap: () => onSelectWord(response!.recommendations[i].word),
-                  child: Text(
-                    '${response!.recommendations[i].word} (${response!.recommendations[i].score.toStringAsFixed(1)})',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          LayoutBuilder(builder: (context, c) {
+            final recs = [...response!.recommendations];
+            recs.sort((a, b) => b.score.compareTo(a.score));
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.8,
+              ),
+              itemCount: recs.length.clamp(0, 9),
+              itemBuilder: (context, index) {
+                final r = recs[index];
+                return AuroraHoverTile(
+                  emphasize: index == 0,
+                  onTap: () => onSelectWord(r.word),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(r.word.toUpperCase(),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      Text(r.score.toStringAsFixed(2),
+                          style: const TextStyle(color: Colors.white70)),
+                    ],
                   ),
-                ),
-            ],
-          ),
+                );
+              },
+            );
+          }),
           const SizedBox(height: 16),
           AuroraCard(
             child: Column(

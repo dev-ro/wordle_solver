@@ -190,7 +190,6 @@ class _GridSection extends StatelessWidget {
                     _ColorPickTile(
                       color: const Color(0xFF2E7D32),
                       borderColor: Colors.white24,
-                      label: 'Green (2)',
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
                         final current = state.grid.last[idx].feedback;
@@ -201,7 +200,6 @@ class _GridSection extends StatelessWidget {
                     _ColorPickTile(
                       color: const Color(0xFFF9A825),
                       borderColor: Colors.white24,
-                      label: 'Yellow (3)',
                       onTap: () {
                         final idx = state.selectedIndex ?? 0;
                         final current = state.grid.last[idx].feedback;
@@ -259,13 +257,11 @@ class _GridSection extends StatelessWidget {
 class _ColorPickTile extends StatelessWidget {
   final Color color;
   final Color borderColor;
-  final String label;
   final VoidCallback onTap;
 
   const _ColorPickTile({
     required this.color,
     required this.borderColor,
-    required this.label,
     required this.onTap,
   });
 
@@ -287,8 +283,6 @@ class _ColorPickTile extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         ],
       ),
     );
