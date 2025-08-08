@@ -3,12 +3,11 @@
 
 import json
 from collections import Counter
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Set
 
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app, storage
-from firebase_admin.exceptions import FirebaseError
 
 # For cost control and performance optimization
 set_global_options(max_instances=10, min_instances=1)
@@ -220,6 +219,7 @@ def recommend_guesses(
     prefix: Optional[str],
     n: int = 9,
     guess_count: int = 1,
+    score_base_word_list: Optional[List[str]] = None,
 ) -> List[Tuple[str, float]]:
     """
     Recommend top n guess words from the word list.
@@ -245,7 +245,8 @@ def recommend_guesses(
         return []
 
     # Calculate letter frequencies and scores
-    frequencies = calculate_letter_frequency(word_list, length, prefix)
+    base = score_base_word_list if score_base_word_list is not None else word_list
+    frequencies = calculate_letter_frequency(base, length, prefix)
     letter_scores = normalize_letter_frequencies(frequencies)
 
     # Score and sort words
@@ -258,7 +259,7 @@ def recommend_guesses(
     return scored_words[:n]
 
 
-def find_variable_letter_positions(word_list: List[str]) -> Dict[int, set]:
+def find_variable_letter_positions(word_list: List[str]) -> Dict[int, Set[str]]:
     """
     Find positions where letters vary across the word list.
 
@@ -272,7 +273,7 @@ def find_variable_letter_positions(word_list: List[str]) -> Dict[int, set]:
         return {}
 
     word_length = len(word_list[0])
-    variable_positions = {i: set() for i in range(word_length)}
+    variable_positions: Dict[int, Set[str]] = {i: set() for i in range(word_length)}
 
     for word in word_list:
         for i, letter in enumerate(word):
@@ -363,24 +364,28 @@ def calculate_next_move(req: https_fn.CallableRequest) -> Dict[str, Any]:
             guess_feedback = list(zip(guess, feedback))
             possible_words = filter_possible_words(possible_words, guess_feedback)
 
-        # Generate recommendations
+        # Generate recommendations strictly from remaining possible words,
+        # but compute letter frequency over the full dictionary for better scoring,
+        # matching the reference prototype behavior.
         recommendations = recommend_guesses(
-            dictionary, word_length, prefix, n=9, guess_count=guess_count
+            possible_words,
+            word_length,
+            prefix,
+            n=9,
+            guess_count=guess_count,
+            score_base_word_list=dictionary,
         )
 
         # Find variable positions for filler word analysis
         variable_positions = find_variable_letter_positions(possible_words)
 
         # Collect variable letters for filler suggestions
-        variable_letters = set()
-        for letters in variable_positions.values():
-            variable_letters.update(letters)
+        variable_letters = set().union(*variable_positions.values())
 
         # Find filler words if we have variable letters
         filler_suggestions = []
         if variable_letters and len(possible_words) > 10:
             # Find words from full dictionary that contain variable letters
-            variable_letter_str = "".join(sorted(variable_letters))
             filler_candidates = [
                 word
                 for word in dictionary
@@ -415,7 +420,7 @@ def calculate_next_move(req: https_fn.CallableRequest) -> Dict[str, Any]:
 
     except ValueError as e:
         return {"error": "INVALID_ARGUMENT", "message": str(e)}
-    except Exception as e:
+    except Exception:
         return {"error": "INTERNAL_ERROR", "message": "An unexpected error occurred"}
 
 

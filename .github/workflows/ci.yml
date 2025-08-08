@@ -14,11 +14,13 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup Flutter
               uses: subosito/flutter-action@v2
               with:
-                  flutter-version: '3.24.5'
+                  flutter-version: '3.32.8'
                   channel: 'stable'
                   cache: true
 
@@ -32,7 +34,7 @@ jobs:
               run: flutter analyze --fatal-infos
 
             - name: Check Flutter formatting
-              run: dart format --set-exit-if-changed .
+              run: bash scripts/format.sh
 
             - name: Run Flutter tests
               run: flutter test --coverage
@@ -106,16 +108,67 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Run security scan (skipped)
-              run: echo "Skipping SecureCodeWarrior SARIF upload due to repository not found"
-              continue-on-error: true
-
-            - name: Check for secrets
-              uses: trufflesecurity/trufflehog@main
+            - name: Setup Python
+              uses: actions/setup-python@v5
               with:
-                  path: ./
-                  base: main
-                  head: HEAD
+                  python-version: '3.12'
+
+            - name: Python dependency vulnerabilities (pip-audit)
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pip-audit
+                  pip-audit -r functions/requirements.txt
+
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: '1.22.x'
+
+            - name: Install OSV-Scanner (go install)
+              run: |
+                  go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+                  echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+            - name: Scan manifests with OSV-Scanner (Dart/Python)
+              run: |
+                  # Scan Flutter/Dart and Python manifests/locks
+                  osv-scanner -r . || true
+
+            - name: Install jq (for JSON parsing)
+              run: sudo apt-get update && sudo apt-get install -y jq
+
+            - name: Install trufflehog (prebuilt binary)
+              run: |
+                  set -euo pipefail
+                  RELEASE_API="https://api.github.com/repos/trufflesecurity/trufflehog/releases/latest"
+                  JSON=$(curl -sSL "$RELEASE_API")
+                  # Prefer tar.gz for linux_amd64; fallback to raw binary if tar.gz isn't present
+                  TARBALL_URL=$(echo "$JSON" | jq -r '.assets[] | select(.name | test("linux_amd64.*\\.tar\\.gz$")) | .browser_download_url' | head -n1)
+                  if [ -z "$TARBALL_URL" ] || [ "$TARBALL_URL" = "null" ]; then
+                    BINARY_URL=$(echo "$JSON" | jq -r '.assets[] | select(.name | test("linux_amd64$")) | .browser_download_url' | head -n1)
+                  else
+                    BINARY_URL=""
+                  fi
+                  if [ -n "$TARBALL_URL" ]; then
+                    echo "Downloading tarball: $TARBALL_URL"
+                    curl -sSL "$TARBALL_URL" -o trufflehog.tar.gz
+                    tar -xzf trufflehog.tar.gz
+                    BIN=$(find . -maxdepth 2 -type f -name trufflehog | head -n1)
+                    chmod +x "$BIN"
+                    sudo mv "$BIN" /usr/local/bin/trufflehog
+                  elif [ -n "$BINARY_URL" ]; then
+                    echo "Downloading binary: $BINARY_URL"
+                    curl -sSL "$BINARY_URL" -o trufflehog
+                    chmod +x trufflehog
+                    sudo mv trufflehog /usr/local/bin/
+                  else
+                    echo "Failed to locate trufflehog linux_amd64 asset in latest release" >&2
+                    exit 1
+                  fi
+
+            - name: Secret scan (trufflehog filesystem)
+              run: trufflehog filesystem --no-update .
+              continue-on-error: true
 
     bash-scripts-check:
         name: Bash Scripts Check
