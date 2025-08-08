@@ -89,6 +89,16 @@ gh issue create --title "fix(sync): Correct field mapping" --body "The 'last\_up
 
 Once your work is ready for review, push your branch and open a PR.
 
+### REQUIRED: Format Dart code before opening PR
+
+You MUST run code formatting prior to creating a PR to prevent CI failures:
+
+```bash
+dart format .
+```
+
+Run this from the repository root. Do not skip this step.
+
 ### Push your new branch to the remote repository
 
 git push origin \<branch-name\>
