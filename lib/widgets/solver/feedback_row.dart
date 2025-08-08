@@ -40,12 +40,12 @@ class FeedbackRow extends StatelessWidget {
             onLetterChanged: (v) => onLetterChanged(i, v),
             side: clampedSide,
             focusNode: focusNodes[i],
-            onMoveNext: i < tiles.length - 1 ? () => focusNodes[i + 1].requestFocus() : null,
+            onMoveNext: i < tiles.length - 1
+                ? () => focusNodes[i + 1].requestFocus()
+                : null,
             onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
           ),
       ],
     );
   }
 }
-
-

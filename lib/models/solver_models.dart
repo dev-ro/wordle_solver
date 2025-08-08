@@ -21,10 +21,10 @@ class SolverConfig {
   }
 
   Map<String, dynamic> toMap() => {
-        'wordLength': wordLength,
-        'prefix': prefix,
-        'dictionary': dictionary,
-      };
+    'wordLength': wordLength,
+    'prefix': prefix,
+    'dictionary': dictionary,
+  };
 }
 
 @immutable
@@ -33,12 +33,9 @@ class HistoryEntry {
   final String feedback; // e.g., 'bbbyg' where g=green, y=yellow, b=black
 
   const HistoryEntry({required this.guess, required this.feedback})
-      : assert(guess.length == feedback.length);
+    : assert(guess.length == feedback.length);
 
-  Map<String, dynamic> toMap() => {
-        'guess': guess,
-        'feedback': feedback,
-      };
+  Map<String, dynamic> toMap() => {'guess': guess, 'feedback': feedback};
 }
 
 @immutable
@@ -76,8 +73,10 @@ class SolverResponse {
 
   factory SolverResponse.fromMap(Map<String, dynamic> map) {
     final recs = (map['recommendations'] as List<dynamic>? ?? [])
-        .map((e) => SolverRecommendation.fromMap(
-            (e as Map).cast<String, dynamic>()))
+        .map(
+          (e) =>
+              SolverRecommendation.fromMap((e as Map).cast<String, dynamic>()),
+        )
         .toList(growable: false);
 
     final remainingWords = (map['remainingWords'] as List<dynamic>? ?? [])
@@ -108,5 +107,3 @@ class SolverResponse {
     );
   }
 }
-
-

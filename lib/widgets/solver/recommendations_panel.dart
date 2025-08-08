@@ -41,7 +41,10 @@ class RecommendationsPanel extends StatelessWidget {
               .toList(),
         ),
         const SizedBox(height: 16),
-        Text('Remaining: ${response!.remainingCount}', style: theme.textTheme.labelLarge),
+        Text(
+          'Remaining: ${response!.remainingCount}',
+          style: theme.textTheme.labelLarge,
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: 100,
@@ -49,10 +52,12 @@ class RecommendationsPanel extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             children: response!.remainingWords
                 .take(50)
-                .map((w) => Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Chip(label: Text(w)),
-                    ))
+                .map(
+                  (w) => Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Chip(label: Text(w)),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -64,16 +69,16 @@ class RecommendationsPanel extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: response!.fillerSuggestions
-                .map((w) => InputChip(
-                      label: Text(w),
-                      onPressed: () => onSelectWord(w),
-                    ))
+                .map(
+                  (w) => InputChip(
+                    label: Text(w),
+                    onPressed: () => onSelectWord(w),
+                  ),
+                )
                 .toList(),
           ),
-        ]
+        ],
       ],
     );
   }
 }
-
-

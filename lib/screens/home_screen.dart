@@ -21,9 +21,16 @@ class HomeScreen extends ConsumerWidget {
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _GridSection(state: state, controller: controller)),
+                  Expanded(
+                    child: _GridSection(state: state, controller: controller),
+                  ),
                   const SizedBox(width: 24),
-                  Expanded(child: _RecommendationsSection(state: state, controller: controller)),
+                  Expanded(
+                    child: _RecommendationsSection(
+                      state: state,
+                      controller: controller,
+                    ),
+                  ),
                 ],
               )
             : SingleChildScrollView(
@@ -33,7 +40,10 @@ class HomeScreen extends ConsumerWidget {
                   children: [
                     _GridSection(state: state, controller: controller),
                     const SizedBox(height: 24),
-                    _RecommendationsSection(state: state, controller: controller),
+                    _RecommendationsSection(
+                      state: state,
+                      controller: controller,
+                    ),
                   ],
                 ),
               );
@@ -68,8 +78,10 @@ class _GridSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Length: ${state.config.wordLength}',
-                      style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    'Length: ${state.config.wordLength}',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                   Slider(
                     min: 3,
                     max: 20,
@@ -96,8 +108,14 @@ class _GridSection extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 value: state.config.dictionary,
                 items: const [
-                  DropdownMenuItem(value: 'english.json', child: Text('English')),
-                  DropdownMenuItem(value: 'spanish.json', child: Text('Spanish')),
+                  DropdownMenuItem(
+                    value: 'english.json',
+                    child: Text('English'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'spanish.json',
+                    child: Text('Spanish'),
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) controller.setDictionary(v);
@@ -113,38 +131,49 @@ class _GridSection extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                LayoutBuilder(builder: (context, c) {
-                  return Column(
-                    children: [
-                      for (int r = 0; r < state.grid.length; r++) ...[
-                        _FocusableFeedbackRow(
-                          tiles: state.grid[r],
-                          onToggleFeedback: (i) => controller.toggleFeedback(i),
-                          onLetterChanged: (i, v) => controller.setLetter(i, v),
-                          maxWidth: c.maxWidth - 32, // inner padding margin
-                        ),
-                        if (r != state.grid.length - 1) const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, c) {
+                    return Column(
+                      children: [
+                        for (int r = 0; r < state.grid.length; r++) ...[
+                          _FocusableFeedbackRow(
+                            tiles: state.grid[r],
+                            onToggleFeedback: (i) =>
+                                controller.toggleFeedback(i),
+                            onLetterChanged: (i, v) =>
+                                controller.setLetter(i, v),
+                            maxWidth: c.maxWidth - 32, // inner padding margin
+                          ),
+                          if (r != state.grid.length - 1)
+                            const SizedBox(height: 12),
+                        ],
                       ],
-                    ],
-                  );
-                }),
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Theme.of(context).platform == TargetPlatform.iOS
                       ? CupertinoButton.filled(
-                          onPressed: state.isLoading ? null : controller.requestRecommendations,
+                          onPressed: state.isLoading
+                              ? null
+                              : controller.requestRecommendations,
                           child: state.isLoading
                               ? const CupertinoActivityIndicator()
                               : const Text('Recommend'),
                         )
                       : ElevatedButton.icon(
-                          onPressed: state.isLoading ? null : controller.requestRecommendations,
+                          onPressed: state.isLoading
+                              ? null
+                              : controller.requestRecommendations,
                           icon: state.isLoading
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.tips_and_updates),
                           label: const Text('Recommend'),
@@ -152,7 +181,10 @@ class _GridSection extends StatelessWidget {
                 ),
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: 8),
-                  Text(state.errorMessage!, style: TextStyle(color: theme.colorScheme.error)),
+                  Text(
+                    state.errorMessage!,
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
                 ],
               ],
             ),
@@ -167,7 +199,10 @@ class _RecommendationsSection extends StatelessWidget {
   final SolverUiState state;
   final SolverController controller;
 
-  const _RecommendationsSection({required this.state, required this.controller});
+  const _RecommendationsSection({
+    required this.state,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +213,11 @@ class _RecommendationsSection extends StatelessWidget {
           response: state.lastResponse,
           onSelectWord: (word) {
             // Autofill current row with selected word
-            for (int i = 0; i < state.config.wordLength && i < word.length; i++) {
+            for (
+              int i = 0;
+              i < state.config.wordLength && i < word.length;
+              i++
+            ) {
               controller.setLetter(i, word[i]);
             }
           },
@@ -255,5 +294,3 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
     );
   }
 }
-
-

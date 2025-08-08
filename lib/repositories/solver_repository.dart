@@ -6,7 +6,7 @@ class SolverRepository {
   final FirebaseFunctions _functions;
 
   SolverRepository({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+    : _functions = functions ?? FirebaseFunctions.instance;
 
   Future<SolverResponse> calculateNextMove({
     required SolverConfig config,
@@ -23,5 +23,3 @@ class SolverRepository {
     return SolverResponse.fromMap(data);
   }
 }
-
-

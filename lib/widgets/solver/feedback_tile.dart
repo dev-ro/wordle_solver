@@ -111,5 +111,3 @@ class FeedbackTile extends StatelessWidget {
     return child;
   }
 }
-
-
