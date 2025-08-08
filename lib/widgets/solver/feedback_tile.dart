@@ -54,7 +54,7 @@ class FeedbackTile extends StatelessWidget {
       focusNode: focusNode,
       onKeyEvent: (node, event) {
         // Handle backspace navigation when empty
-        if (event.logicalKey.keyLabel.toLowerCase() == 'backspace' &&
+        if (event.logicalKey == LogicalKeyboardKey.backspace &&
             controller.text.isEmpty) {
           onMovePrev?.call();
         }
