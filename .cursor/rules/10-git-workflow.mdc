@@ -100,7 +100,7 @@ Once your work is ready for review, push your branch and open a PR.
 
 ### REQUIRED: Format Dart code before opening PR
 
-You MUST run code formatting immediately before creating a PR to prevent CI failures:
+CI no longer enforces formatting; developers MUST run formatting locally immediately before opening a PR to keep consistency:
 
 ```bash
 dart format .
