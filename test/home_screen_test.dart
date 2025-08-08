@@ -10,12 +10,14 @@ import 'package:wordle_solver/repositories/solver_repository.dart';
 void main() {
   testWidgets('renders HomeScreen and title', (WidgetTester tester) async {
     // Override repository to avoid Firebase initialization in tests
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        solverRepositoryProvider.overrideWithValue(_FakeRepository()),
-      ],
-      child: const MaterialApp(home: HomeScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          solverRepositoryProvider.overrideWithValue(_FakeRepository()),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
 
     // AppBar title
     expect(find.text('Wordle Solver'), findsOneWidget);
@@ -41,5 +43,3 @@ class _FakeRepository implements SolverRepository {
     );
   }
 }
-
-
