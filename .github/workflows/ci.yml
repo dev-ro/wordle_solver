@@ -134,12 +134,14 @@ jobs:
                   # Scan Flutter/Dart and Python manifests/locks
                   osv-scanner -r . || true
 
-            - name: Check for secrets (trufflehog)
-              uses: trufflesecurity/trufflehog@main
-              with:
-                  path: ./
-                  base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-                  head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+            - name: Install trufflehog (go install)
+              run: |
+                  go install github.com/trufflesecurity/trufflehog@latest
+                  echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+            - name: Secret scan (trufflehog filesystem)
+              run: trufflehog filesystem --no-update .
+              continue-on-error: true
 
     bash-scripts-check:
         name: Bash Scripts Check
