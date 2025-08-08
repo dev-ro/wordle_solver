@@ -117,10 +117,15 @@ jobs:
                   pip install pip-audit
                   pip-audit -r functions/requirements.txt
 
-            - name: Install OSV-Scanner
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: '1.22.x'
+
+            - name: Install OSV-Scanner (go install)
               run: |
-                  curl -sSfL https://raw.githubusercontent.com/google/osv-scanner/main/install.sh | sh -s -- -b $HOME/.local/bin
-                  echo "$HOME/.local/bin" >> $GITHUB_PATH
+                  go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+                  echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
             - name: Scan manifests with OSV-Scanner (Dart/Python)
               run: |
