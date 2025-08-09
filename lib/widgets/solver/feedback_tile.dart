@@ -115,17 +115,10 @@ class FeedbackTile extends StatelessWidget {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            // Use onTapDown for immediate responsiveness; single tap selects and cycles once
-            onTapDown: isLocked
-                ? null
-                : (_) {
-                    onTap?.call(); // select
-                    onLongPress?.call(); // cycle once
-                  },
+            // Single tap selects only; long-press cycles exactly once
+            onTap: isLocked ? null : onTap,
             onDoubleTap: isLocked ? null : onDoubleTap,
-            onLongPress: isLocked
-                ? null
-                : (onLongPress ?? onDoubleTap ?? onTap),
+            onLongPress: isLocked ? null : onLongPress,
           ),
         ),
       ],
