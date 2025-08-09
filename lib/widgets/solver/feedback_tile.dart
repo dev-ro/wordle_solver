@@ -45,13 +45,8 @@ class FeedbackTile extends StatelessWidget {
   }
 
   Color _fgColor(BuildContext context) {
-    switch (feedback) {
-      case TileFeedback.green:
-      case TileFeedback.yellow:
-        return Colors.black;
-      case TileFeedback.black:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
-    }
+    // Always render white text for strong contrast across states
+    return Colors.white;
   }
 
   @override
@@ -73,7 +68,12 @@ class FeedbackTile extends StatelessWidget {
         textAlign: TextAlign.center,
         textCapitalization: TextCapitalization.characters,
         maxLength: 1,
-        decoration: const InputDecoration(counterText: ''),
+        decoration: const InputDecoration(
+          counterText: '',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
         style: TextStyle(
           color: _fgColor(context),
           fontSize: side * 0.4,
@@ -114,13 +114,11 @@ class FeedbackTile extends StatelessWidget {
         // Overlay tap target so a single tap toggles feedback regardless of TextField gestures
         Positioned.fill(
           child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            // Tap to select; double tap cycles; long press also cycles
+            behavior: HitTestBehavior.opaque,
+            // Single tap selects only; long-press cycles exactly once
             onTap: isLocked ? null : onTap,
             onDoubleTap: isLocked ? null : onDoubleTap,
-            onLongPress: isLocked
-                ? null
-                : (onLongPress ?? onDoubleTap ?? onTap),
+            onLongPress: isLocked ? null : onLongPress,
           ),
         ),
       ],
