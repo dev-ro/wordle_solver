@@ -118,7 +118,9 @@ class FeedbackTile extends StatelessWidget {
             // Tap to select; double tap cycles; long press also cycles
             onTap: isLocked ? null : onTap,
             onDoubleTap: isLocked ? null : onDoubleTap,
-            onLongPress: isLocked ? null : (onLongPress ?? onDoubleTap ?? onTap),
+            onLongPress: isLocked
+                ? null
+                : (onLongPress ?? onDoubleTap ?? onTap),
           ),
         ),
       ],

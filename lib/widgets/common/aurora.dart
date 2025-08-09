@@ -13,11 +13,7 @@ BoxDecoration glassDecoration({double radius = 16, double opacity = 0.28}) {
     color: const Color(0xFF0E0E12).withValues(alpha: opacity),
     borderRadius: BorderRadius.circular(radius),
     boxShadow: const [
-      BoxShadow(
-        color: Color(0x66000000),
-        blurRadius: 16,
-        offset: Offset(0, 8),
-      ),
+      BoxShadow(color: Color(0x66000000), blurRadius: 16, offset: Offset(0, 8)),
     ],
   );
 }
@@ -117,7 +113,9 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
               padding: widget.padding,
               decoration: BoxDecoration(
                 color: const Color(0xFF15151A).withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(widget.borderRadius - widget.borderWidth),
+                borderRadius: BorderRadius.circular(
+                  widget.borderRadius - widget.borderWidth,
+                ),
               ),
               child: widget.child,
             ),
@@ -127,5 +125,3 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
     );
   }
 }
-
-
