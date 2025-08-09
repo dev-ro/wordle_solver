@@ -13,6 +13,9 @@ class FeedbackTile extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback? onMoveNext;
   final VoidCallback? onMovePrev;
+  final bool isPrefixLocked;
+  final bool isSelected;
+  final VoidCallback? onDoubleTap;
 
   const FeedbackTile({
     super.key,
@@ -25,16 +28,19 @@ class FeedbackTile extends StatelessWidget {
     required this.focusNode,
     this.onMoveNext,
     this.onMovePrev,
+    this.isPrefixLocked = false,
+    this.isSelected = false,
+    this.onDoubleTap,
   });
 
   Color _bgColor(BuildContext context) {
     switch (feedback) {
       case TileFeedback.green:
-        return Colors.green;
+        return const Color(0xFF2E7D32); // deeper green for dark theme
       case TileFeedback.yellow:
-        return Colors.amber;
+        return const Color(0xFFF9A825); // deeper amber
       case TileFeedback.black:
-        return Theme.of(context).colorScheme.surfaceContainerHighest;
+        return const Color(0xFF1C1D22);
     }
   }
 
@@ -51,6 +57,7 @@ class FeedbackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController(text: letter.toUpperCase());
+    final bool isLocked = isPrefixLocked || feedback == TileFeedback.green;
     final textField = Focus(
       focusNode: focusNode,
       onKeyEvent: (node, event) {
@@ -73,6 +80,10 @@ class FeedbackTile extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
         controller: controller,
+        readOnly: isLocked,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+        ],
         onChanged: (v) {
           onLetterChanged(v.toLowerCase());
           if (v.isNotEmpty) {
@@ -91,7 +102,10 @@ class FeedbackTile extends StatelessWidget {
             color: _bgColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: isSelected
+                  ? const Color(0xFF89CFF0)
+                  : (isPrefixLocked ? const Color(0xFF89CFF0) : Colors.white24),
+              width: 1.5,
             ),
           ),
           alignment: Alignment.center,
@@ -101,8 +115,10 @@ class FeedbackTile extends StatelessWidget {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: onTap,
-            onLongPress: onLongPress,
+            // Tap to select; double tap cycles; long press also cycles
+            onTap: isLocked ? null : onTap,
+            onDoubleTap: isLocked ? null : onDoubleTap,
+            onLongPress: isLocked ? null : (onLongPress ?? onDoubleTap ?? onTap),
           ),
         ),
       ],

@@ -5,18 +5,27 @@ class SolverConfig {
   final int wordLength;
   final String? prefix;
   final String dictionary; // e.g., 'english.json'
+  final bool
+  autoCopyOnSelect; // whether tapping a recommendation copies it to clipboard
 
   const SolverConfig({
     required this.wordLength,
     this.prefix,
     required this.dictionary,
+    this.autoCopyOnSelect = true,
   });
 
-  SolverConfig copyWith({int? wordLength, String? prefix, String? dictionary}) {
+  SolverConfig copyWith({
+    int? wordLength,
+    String? prefix,
+    String? dictionary,
+    bool? autoCopyOnSelect,
+  }) {
     return SolverConfig(
       wordLength: wordLength ?? this.wordLength,
       prefix: prefix ?? this.prefix,
       dictionary: dictionary ?? this.dictionary,
+      autoCopyOnSelect: autoCopyOnSelect ?? this.autoCopyOnSelect,
     );
   }
 
@@ -24,6 +33,7 @@ class SolverConfig {
     'wordLength': wordLength,
     'prefix': prefix,
     'dictionary': dictionary,
+    'autoCopyOnSelect': autoCopyOnSelect,
   };
 }
 

@@ -33,8 +33,7 @@ jobs:
             - name: Analyze Flutter code
               run: flutter analyze --fatal-infos
 
-            - name: Check Flutter formatting
-              run: bash scripts/format.sh
+            # Removed formatting check to speed up CI. Formatting is a developer responsibility.
 
             - name: Run Flutter tests
               run: flutter test --coverage

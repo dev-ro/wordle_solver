@@ -34,21 +34,32 @@ class WordleSolverApp extends StatelessWidget {
       title: 'Wordle Solver',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: Brightness.light,
-        ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          brightness: Brightness.dark,
+        brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF89CFF0),
+          secondary: Color(0xFFF4C2C2),
         ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(color: Colors.white),
+          titleMedium: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+          bodySmall: TextStyle(color: Colors.white60),
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+        ),
+        sliderTheme: SliderThemeData(
+          activeTrackColor: const Color(0xFF89CFF0),
+          inactiveTrackColor: Colors.white24,
+          thumbColor: Colors.white,
+          overlayColor: const Color(0xFF89CFF0).withValues(alpha: 0.15),
+        ),
       ),
+      darkTheme: ThemeData.dark(useMaterial3: true),
       home: const HomeScreen(),
     );
   }
