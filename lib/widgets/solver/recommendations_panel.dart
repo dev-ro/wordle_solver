@@ -43,16 +43,23 @@ class RecommendationsPanel extends StatelessWidget {
             builder: (context, c) {
               final recs = [...response!.recommendations];
               recs.sort((a, b) => b.score.compareTo(a.score));
+              // Responsive columns: denser layout while adapting to width
+              final width = c.maxWidth;
+              final columns = width >= 800
+                  ? 4
+                  : width >= 520
+                  ? 3
+                  : 2;
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.15,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.2,
                 ),
-                itemCount: recs.length.clamp(0, 9),
+                itemCount: recs.length.clamp(0, 12),
                 itemBuilder: (context, index) {
                   final r = recs[index];
                   return AuroraHoverTile(
@@ -68,15 +75,15 @@ class RecommendationsPanel extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                            fontSize: 15, // slightly smaller for density
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           r.score.toStringAsFixed(2),
                           style: const TextStyle(
                             color: Colors.white70,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -101,15 +108,15 @@ class RecommendationsPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: response!.remainingWords.take(50).map((w) {
                     return MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                          horizontal: 9,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF15151A).withValues(alpha: 0.5),
@@ -118,7 +125,10 @@ class RecommendationsPanel extends StatelessWidget {
                         ),
                         child: Text(
                           w,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     );

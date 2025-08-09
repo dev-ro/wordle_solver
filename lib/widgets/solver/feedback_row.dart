@@ -43,7 +43,7 @@ class FeedbackRow extends StatelessWidget {
           FeedbackTile(
             letter: tiles[i].letter,
             feedback: tiles[i].feedback,
-            // Use long-press for feedback toggle; disable single-tap toggle
+            // Single tap selects; long-press remains as explicit cycle
             onTap: () => onSelect(i),
             onLongPress: () => onToggleFeedback(i),
             onLetterChanged: (v) => onLetterChanged(i, v),

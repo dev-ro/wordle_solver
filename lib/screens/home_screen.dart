@@ -95,12 +95,18 @@ class _TopControls extends StatelessWidget {
                         context,
                       ).textTheme.labelMedium?.copyWith(color: Colors.white),
                     ),
-                    Slider(
-                      min: 3,
-                      max: 20,
-                      divisions: 17,
-                      value: state.config.wordLength.toDouble(),
-                      onChanged: (v) => controller.setWordLength(v.round()),
+                    SliderTheme(
+                      data: SliderTheme.of(
+                        context,
+                      ).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
+                      child: Slider(
+                        min: 3,
+                        max: 20,
+                        // Remove divisions to hide internal ticks, but keep integer snapping
+                        value: state.config.wordLength.toDouble(),
+                        onChanged: (v) =>
+                            controller.setWordLength(v.round().clamp(3, 20)),
+                      ),
                     ),
                   ],
                 ),
@@ -154,17 +160,21 @@ class _TopControls extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Row(
+              Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
                     'Auto-copy',
                     style: TextStyle(color: Colors.white70),
                   ),
-                  const SizedBox(width: 8),
-                  Switch.adaptive(
-                    value: state.config.autoCopyOnSelect,
-                    onChanged: (v) => controller.setAutoCopyOnSelect(v),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Switch.adaptive(
+                      value: state.config.autoCopyOnSelect,
+                      onChanged: (v) => controller.setAutoCopyOnSelect(v),
+                    ),
                   ),
                 ],
               ),
