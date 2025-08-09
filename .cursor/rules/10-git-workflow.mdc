@@ -82,17 +82,24 @@ As you work, make small, logical commits using the standards defined above.
 - Do NOT commit and then format. Always format immediately before the commit.
 - If you make additional edits after formatting, format again before committing.
 
-### Step 3: Create an Issue (For feat and fix only)
+### Step 3: Select Work Item (Issues-First)
 
-This workflow requires creating an issue *after* the work is committed. This links the code change to a trackable work item on GitHub.
+We now begin all work from existing GitHub issues. Do not create issues as part of the commit flow.
 
-- **Rule**: If your commit is a feat or fix, you **must** create a corresponding GitHub issue immediately after the commit.
-- Use the gh CLI. The issue title **must** be the commit subject, and the body **must** be the commit body.
+- Always pick the oldest open issue:
 
-**Example:**
-After committing git commit -m "fix(sync): Correct field mapping" -m "The 'last\_updated' field was missing.", create the issue:
+```bash
+gh issue list --state open --limit 100 --json number,title,createdAt --jq 'sort_by(.createdAt) | .[0]'
+```
 
-gh issue create --title "fix(sync): Correct field mapping" --body "The 'last\_updated' field was missing."
+- Create a dedicated branch for the selected issue. Include type/scope and the issue number:
+
+```bash
+git checkout -b <type>/<scope>-#<issue-number>
+# example: fix/ui-overhaul-core-components-#10
+```
+
+- Implement only that issue in the branch. Reference the issue in the PR description with "Closes #<number>" so it closes on merge.
 
 ### Step 4: Create a Pull Request
 
@@ -116,7 +123,7 @@ IMPORTANT:
 
 git push origin \<branch-name\>
 
-Now, go to GitHub to create a Pull Request from your branch into main. In the PR description, link the issue it resolves using a keyword like Closes \#123.
+Now, go to GitHub to create a Pull Request from your branch into main. In the PR description, link the issue it resolves using a keyword like "Closes #123".
 
 ### Step 5: Merge the Pull Request
 
@@ -157,3 +164,10 @@ When adding a multiline comment to a PR or issue via the gh CLI, you **must** pi
 
 - **INCORRECT**: Will literally print \\n in the comment.
     gh pr comment 123 --body "First line.\\nSecond line."
+
+-----
+
+## 4\. Policy Notes
+
+- We no longer create issues as part of the Git workflow. Work is selected from the existing backlog, prioritizing the oldest open issue.
+- PRs must link to the relevant issue with "Closes #<number>".
