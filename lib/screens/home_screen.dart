@@ -571,6 +571,11 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 ctrl.backspaceAtPreviousEditable();
                 return;
               }
+              if (key == LogicalKeyboardKey.enter ||
+                  key == LogicalKeyboardKey.numpadEnter) {
+                ctrl.requestRecommendations();
+                return;
+              }
             },
             child: FocusScope(
               node: _rowScope,
@@ -588,6 +593,10 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 },
                 onDoubleTap: (i) {
                   ctrl.cycleFeedback(i);
+                },
+                onSubmit: () {
+                  // Trigger submit from Enter key
+                  ctrl.requestRecommendations();
                 },
               ),
             ),

@@ -16,6 +16,7 @@ class FeedbackTile extends StatelessWidget {
   final bool isPrefixLocked;
   final bool isSelected;
   final VoidCallback? onDoubleTap;
+  final VoidCallback? onSubmit;
 
   const FeedbackTile({
     super.key,
@@ -31,6 +32,7 @@ class FeedbackTile extends StatelessWidget {
     this.isPrefixLocked = false,
     this.isSelected = false,
     this.onDoubleTap,
+    this.onSubmit,
   });
 
   Color _bgColor(BuildContext context) {
@@ -100,6 +102,7 @@ class FeedbackTile extends StatelessWidget {
             onMoveNext?.call();
           }
         },
+        onSubmitted: (_) => onSubmit?.call(),
       ),
     );
 
