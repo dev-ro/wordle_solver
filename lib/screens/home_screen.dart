@@ -106,7 +106,7 @@ class _TopControls extends ConsumerWidget {
                 width: 140,
                 child: TextField(
                   decoration: const InputDecoration(
-                    labelText: 'prefix',
+                    labelText: 'Prefix',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   maxLength: 1,
@@ -124,8 +124,8 @@ class _TopControls extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
+              Flexible(
+                flex: 1,
                 child: DropdownButtonFormField<String>(
                   value: state.config.dictionary,
                   items: const [
@@ -143,24 +143,22 @@ class _TopControls extends ConsumerWidget {
                     if (v != null) controller.setDictionary(v);
                   },
                   decoration: const InputDecoration(
-                    labelText: 'dict',
+                    labelText: 'Dictionary',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
-                width: 170,
+              Flexible(
+                flex: 2,
                 child: Tooltip(
                   message:
                       "Type letters like 'bhptw'. Results rank by coverage and ignore prefix/prior guesses.",
-                  triggerMode: TooltipTriggerMode.tap,
                   child: TextField(
                     decoration: const InputDecoration(
-                      labelText: 'search fillers',
+                      labelText: 'Search fillers',
                       labelStyle: TextStyle(color: Colors.white70),
-                      filled: true,
                     ),
                     onChanged: (v) =>
                         fillerCtrl.setQuery(v, config: state.config),
