@@ -7,6 +7,7 @@ import '../state/solver_state.dart';
 import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
 import '../widgets/common/aurora.dart';
+import '../widgets/common/bokeh_background.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -32,39 +33,24 @@ class HomeScreen extends ConsumerWidget {
           ),
         );
 
-        return Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -0.25),
-              radius: 1.2,
-              colors: [Color(0xFF1F2540), Color(0xFF0A0B0D)],
-              stops: [0.0, 1.0],
-            ),
-          ),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              title: const Text(
-                'Wordle Solver',
-                style: TextStyle(
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black54,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            const BokehBackground(),
+            Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: const PreferredSize(
+                preferredSize: Size.fromHeight(kToolbarHeight + 18),
+                child: AuroraAppBar(title: 'WORDLE SOLVER'),
+              ),
+              body: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: body,
                 ),
               ),
             ),
-            body: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
-                child: body,
-              ),
-            ),
-          ),
+          ],
         );
       },
     );
@@ -363,35 +349,28 @@ class _RecommendationsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: RecommendationsPanel(
-          response: state.lastResponse,
-          onSelectWord: (word) {
-            // Autofill current row with selected word
-            for (
-              int i = 0;
-              i < state.config.wordLength && i < word.length;
-              i++
-            ) {
-              controller.setLetter(i, word[i]);
-            }
+    return AuroraCard(
+      child: RecommendationsPanel(
+        response: state.lastResponse,
+        onSelectWord: (word) {
+          // Autofill current row with selected word
+          for (int i = 0; i < state.config.wordLength && i < word.length; i++) {
+            controller.setLetter(i, word[i]);
+          }
 
-            // Auto-copy to clipboard if enabled
-            if (state.config.autoCopyOnSelect) {
-              final textToCopy = '!${word.toLowerCase()}';
-              Clipboard.setData(ClipboardData(text: textToCopy));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${word.toLowerCase()} copied to clipboard!'),
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-        ),
+          // Auto-copy to clipboard if enabled
+          if (state.config.autoCopyOnSelect) {
+            final textToCopy = '!${word.toLowerCase()}';
+            Clipboard.setData(ClipboardData(text: textToCopy));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${word.toLowerCase()} copied to clipboard!'),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
       ),
     );
   }

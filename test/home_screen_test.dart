@@ -19,8 +19,8 @@ void main() {
       ),
     );
 
-    // AppBar title
-    expect(find.text('Wordle Solver'), findsOneWidget);
+    // AppBar title (updated to uppercase)
+    expect(find.text('WORDLE SOLVER'), findsOneWidget);
 
     // Length slider exists
     expect(find.byType(Slider), findsOneWidget);
