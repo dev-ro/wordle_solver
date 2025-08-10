@@ -5,6 +5,7 @@ class FillerResults extends StatelessWidget {
   final void Function(String word) onSelectWord;
   final String title;
   final bool dense;
+  final int? denominator; // show score as x/denominator when provided
 
   const FillerResults({
     super.key,
@@ -12,6 +13,7 @@ class FillerResults extends StatelessWidget {
     required this.onSelectWord,
     required this.title,
     this.dense = true,
+    this.denominator,
   });
 
   @override
@@ -36,7 +38,7 @@ class FillerResults extends StatelessWidget {
             crossAxisCount: 3,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            childAspectRatio: 2.8,
+            childAspectRatio: 3.6, // slimmer tiles
           ),
           itemCount: display.length,
           itemBuilder: (context, index) {
@@ -49,7 +51,7 @@ class FillerResults extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.white24, width: 1),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -65,7 +67,9 @@ class FillerResults extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      e.value.toString(),
+                      denominator == null
+                          ? e.value.toString()
+                          : '${e.value}/${denominator!}',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,

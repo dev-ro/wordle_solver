@@ -65,7 +65,12 @@ class FillerWordsService {
         scored.add(MapEntry(w, score));
       }
     }
-    scored.sort((a, b) => b.value.compareTo(a.value));
+    // Sort by score desc, tie-break by alpha for stability
+    scored.sort((a, b) {
+      final cmp = b.value.compareTo(a.value);
+      if (cmp != 0) return cmp;
+      return a.key.compareTo(b.key);
+    });
     if (scored.length > n) {
       return scored.sublist(0, n);
     }

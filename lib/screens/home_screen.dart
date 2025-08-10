@@ -189,6 +189,9 @@ class _TopControls extends ConsumerWidget {
                     FillerResults(
                       title: 'Filler words',
                       results: fillerState.manualResults,
+                      denominator: fillerState.query.trim().isEmpty
+                          ? null
+                          : fillerState.query.trim().split('').toSet().length,
                       onSelectWord: (word) {
                         // Autofill current row with selected word and optionally copy (reuse existing UX)
                         for (
@@ -319,7 +322,7 @@ class _GridSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Consumer(
                     builder: (context, ref, _) {
-                      final fillerState = ref.watch(fillerControllerProvider);
+                      // final fillerState = ref.watch(fillerControllerProvider);
                       final fillerCtrl = ref.read(
                         fillerControllerProvider.notifier,
                       );
@@ -347,61 +350,14 @@ class _GridSection extends StatelessWidget {
                                     config: state.config,
                                     remainingCandidates: remaining,
                                   );
-                                  // Show a bottom sheet with results for clarity
-                                  if (context.mounted) {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      backgroundColor: const Color(0xFF0F0F14),
-                                      isScrollControlled: true,
-                                      builder: (ctx) {
-                                        return Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: FillerResults(
-                                            title: 'Auto-suggested fillers',
-                                            results:
-                                                fillerState.autoSuggestResults,
-                                            onSelectWord: (word) {
-                                              Navigator.of(ctx).maybePop();
-                                              for (
-                                                int i = 0;
-                                                i < state.config.wordLength &&
-                                                    i < word.length;
-                                                i++
-                                              ) {
-                                                controller.setLetter(
-                                                  i,
-                                                  word[i],
-                                                );
-                                              }
-                                              if (state
-                                                  .config
-                                                  .autoCopyOnSelect) {
-                                                final textToCopy =
-                                                    '!${word.toLowerCase()}';
-                                                Clipboard.setData(
-                                                  ClipboardData(
-                                                    text: textToCopy,
-                                                  ),
-                                                );
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    duration: Duration(
-                                                      milliseconds: 1200,
-                                                    ),
-                                                    content: Text(
-                                                      'Copied filler to clipboard',
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  }
+                                  // Populate manual search field with suggested variable letters
+                                  final letters = ref
+                                      .read(fillerControllerProvider.notifier)
+                                      .lastAutoSuggestLetters;
+                                  fillerCtrl.setQuery(
+                                    letters,
+                                    config: state.config,
+                                  );
                                 },
                           icon: const Icon(Icons.auto_awesome),
                           label: const Text('Auto-suggest'),

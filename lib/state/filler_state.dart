@@ -38,6 +38,7 @@ class FillerUiState {
 class FillerController extends StateNotifier<FillerUiState> {
   final FillerWordsService service;
   Timer? _debounce;
+  String _lastAutoSuggestLetters = '';
 
   FillerController({required this.service})
     : super(
@@ -80,6 +81,7 @@ class FillerController extends StateNotifier<FillerUiState> {
   }) async {
     final positions = service.findVariableLetterPositions(remainingCandidates);
     final letters = service.collectVariableLetters(positions);
+    _lastAutoSuggestLetters = letters;
     final all = await service.loadDictionary(config.dictionary);
     // Filler auto-suggest ignores prefix and previous guesses; only match length
     final filtered = all
@@ -88,6 +90,8 @@ class FillerController extends StateNotifier<FillerUiState> {
     final results = service.findWordsWithLetters(filtered, letters, n: 9);
     state = state.copyWith(autoSuggestResults: results);
   }
+
+  String get lastAutoSuggestLetters => _lastAutoSuggestLetters;
 }
 
 final fillerWordsServiceProvider = Provider<FillerWordsService>((ref) {
