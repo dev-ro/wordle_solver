@@ -323,23 +323,17 @@ class _GridSection extends StatelessWidget {
                       final fillerCtrl = ref.read(
                         fillerControllerProvider.notifier,
                       );
-                      // Gating conditions
-                      final currentRow = state.grid.isNotEmpty
-                          ? state.grid.last
-                          : <SolverTile>[];
-                      final empties = currentRow
-                          .where(
-                            (t) =>
-                                t.letter.isEmpty &&
-                                t.feedback == TileFeedback.black,
-                          )
-                          .length;
+                      // Gating: small candidate set and only 1–2 variable positions
+                      final remainingCount =
+                          state.lastResponse?.remainingCount ?? 999;
+                      final varPosCount =
+                          state.lastResponse?.variablePositions.length ?? 99;
                       final canSuggest =
-                          (empties >= 1 && empties <= 2) &&
-                          (state.lastResponse?.remainingCount ?? 999) < 10;
+                          (remainingCount < 10) &&
+                          (varPosCount >= 1 && varPosCount <= 2);
                       final tooltip = canSuggest
                           ? 'Auto-suggest filler words based on remaining candidates'
-                          : 'Auto-suggest enabled when 1–2 empty tiles and remaining words < 10';
+                          : 'Enabled when remaining words < 10 and 1–2 variable positions remain';
                       return Tooltip(
                         message: tooltip,
                         child: ElevatedButton.icon(

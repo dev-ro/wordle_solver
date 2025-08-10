@@ -65,13 +65,9 @@ class FillerController extends StateNotifier<FillerUiState> {
     state = state.copyWith(isLoadingManual: true);
     _debounce = Timer(const Duration(milliseconds: 250), () async {
       final all = await service.loadDictionary(config.dictionary);
+      // Filler manual search ignores prefix and previous guesses; only match length
       final filtered = all
-          .where((w) {
-            if (w.length != config.wordLength) return false;
-            final p = config.prefix;
-            if (p != null && p.isNotEmpty && !w.startsWith(p)) return false;
-            return true;
-          })
+          .where((w) => w.length == config.wordLength)
           .toList(growable: false);
       final results = service.findWordsWithLetters(filtered, query, n: 30);
       state = state.copyWith(manualResults: results, isLoadingManual: false);
@@ -85,13 +81,9 @@ class FillerController extends StateNotifier<FillerUiState> {
     final positions = service.findVariableLetterPositions(remainingCandidates);
     final letters = service.collectVariableLetters(positions);
     final all = await service.loadDictionary(config.dictionary);
+    // Filler auto-suggest ignores prefix and previous guesses; only match length
     final filtered = all
-        .where((w) {
-          if (w.length != config.wordLength) return false;
-          final p = config.prefix;
-          if (p != null && p.isNotEmpty && !w.startsWith(p)) return false;
-          return true;
-        })
+        .where((w) => w.length == config.wordLength)
         .toList(growable: false);
     final results = service.findWordsWithLetters(filtered, letters, n: 9);
     state = state.copyWith(autoSuggestResults: results);
