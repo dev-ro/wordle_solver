@@ -7,6 +7,8 @@ import '../state/solver_state.dart';
 import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
 import '../widgets/common/aurora.dart';
+import '../widgets/common/bokeh_background.dart';
+import 'dart:ui' as ui;
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -32,39 +34,63 @@ class HomeScreen extends ConsumerWidget {
           ),
         );
 
-        return Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -0.25),
-              radius: 1.2,
-              colors: [Color(0xFF1F2540), Color(0xFF0A0B0D)],
-              stops: [0.0, 1.0],
-            ),
-          ),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              title: const Text(
-                'Wordle Solver',
-                style: TextStyle(
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black54,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            const BokehBackground(),
+            Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                title: Container(
+                  decoration: BoxDecoration(
+                    gradient: kAuroraGradient,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF000000).withValues(alpha: 0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 1.5,
+                    vertical: 1.5,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10.5),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.06),
+                        child: const Text(
+                          'WORDLE SOLVER',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.8,
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
+                  ),
+                ),
+                centerTitle: true,
+              ),
+              body: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: body,
                 ),
               ),
             ),
-            body: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
-                child: body,
-              ),
-            ),
-          ),
+          ],
         );
       },
     );
@@ -363,35 +389,28 @@ class _RecommendationsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: RecommendationsPanel(
-          response: state.lastResponse,
-          onSelectWord: (word) {
-            // Autofill current row with selected word
-            for (
-              int i = 0;
-              i < state.config.wordLength && i < word.length;
-              i++
-            ) {
-              controller.setLetter(i, word[i]);
-            }
+    return AuroraCard(
+      child: RecommendationsPanel(
+        response: state.lastResponse,
+        onSelectWord: (word) {
+          // Autofill current row with selected word
+          for (int i = 0; i < state.config.wordLength && i < word.length; i++) {
+            controller.setLetter(i, word[i]);
+          }
 
-            // Auto-copy to clipboard if enabled
-            if (state.config.autoCopyOnSelect) {
-              final textToCopy = '!${word.toLowerCase()}';
-              Clipboard.setData(ClipboardData(text: textToCopy));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${word.toLowerCase()} copied to clipboard!'),
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-        ),
+          // Auto-copy to clipboard if enabled
+          if (state.config.autoCopyOnSelect) {
+            final textToCopy = '!${word.toLowerCase()}';
+            Clipboard.setData(ClipboardData(text: textToCopy));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${word.toLowerCase()} copied to clipboard!'),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
       ),
     );
   }
