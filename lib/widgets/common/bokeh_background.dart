@@ -23,7 +23,7 @@ class _BokehBackgroundState extends State<BokehBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 45),
+      duration: const Duration(seconds: 36),
     )..repeat();
     _orbs = const [];
   }
@@ -91,7 +91,11 @@ class _BokehBackgroundState extends State<BokehBackground>
         size.shortestSide * 0.22,
         rand.nextDouble(),
       )!;
-      final speed = lerpDouble(1.0, 2.0, rand.nextDouble())!; // faster
+      final speed = lerpDouble(
+        1.2,
+        2.4,
+        rand.nextDouble(),
+      )!; // slightly faster again
       final alpha = lerpDouble(0.16, 0.28, rand.nextDouble())!;
       final direction = rand.nextDouble() * 2 * math.pi;
       final wobble = rand.nextDouble() * 1.0 + 0.3;
@@ -167,20 +171,20 @@ class _Orb {
   double get alpha => color.a / 255.0;
 
   Offset positionAt(double t) {
-    // Slow drift with slight circular wobble
-    final driftX = math.cos(direction) * speed * 70.0 * t;
-    final driftY = math.sin(direction) * speed * 70.0 * t;
-    final wobbleX = math.cos(2 * math.pi * t + direction) * wobble * 16.0;
-    final wobbleY = math.sin(2 * math.pi * t + direction) * wobble * 16.0;
+    // Seamless loop: use periodic Lissajous-like path that matches at t=0 and t=1
+    // t in [0,1]; convert to angle for periodic motion
+    final angle = 2 * math.pi * t * speed;
+    final driftX = math.cos(direction) * 60.0 * math.sin(angle);
+    final driftY = math.sin(direction) * 60.0 * math.cos(angle);
 
-    var x = center.dx + driftX + wobbleX;
-    var y = center.dy + driftY + wobbleY;
+    // Additional periodic wobble that also loops perfectly
+    final wobbleX =
+        math.cos(2 * math.pi * t * (1.0 + wobble) + direction) * 14.0;
+    final wobbleY =
+        math.sin(2 * math.pi * t * (1.0 + wobble) + direction) * 14.0;
 
-    // Wrap around to avoid hitting edges visibly
-    if (x < -radius) x = bounds.width + radius;
-    if (x > bounds.width + radius) x = -radius;
-    if (y < -radius) y = bounds.height + radius;
-    if (y > bounds.height + radius) y = -radius;
+    final x = center.dx + driftX + wobbleX;
+    final y = center.dy + driftY + wobbleY;
 
     return Offset(x, y);
   }
