@@ -106,7 +106,7 @@ class _TopControls extends ConsumerWidget {
                 width: 140,
                 child: TextField(
                   decoration: const InputDecoration(
-                    labelText: 'Prefix (1 char optional)',
+                    labelText: 'prefix',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   maxLength: 1,
@@ -143,10 +143,29 @@ class _TopControls extends ConsumerWidget {
                     if (v != null) controller.setDictionary(v);
                   },
                   decoration: const InputDecoration(
-                    labelText: 'Dictionary',
+                    labelText: 'dict',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 170,
+                child: Tooltip(
+                  message:
+                      "Type letters like 'bhptw'. Results rank by coverage and ignore prefix/prior guesses.",
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'search fillers',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      filled: true,
+                    ),
+                    onChanged: (v) =>
+                        fillerCtrl.setQuery(v, config: state.config),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -176,15 +195,6 @@ class _TopControls extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search filler letters (e.g., bhptw)',
-                      filled: true,
-                    ),
-                    onChanged: (v) =>
-                        fillerCtrl.setQuery(v, config: state.config),
-                  ),
-                  const SizedBox(height: 8),
                   if (fillerState.query.isNotEmpty)
                     FillerResults(
                       title: 'Filler words',
