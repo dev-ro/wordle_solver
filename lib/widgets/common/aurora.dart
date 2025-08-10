@@ -167,16 +167,17 @@ class AuroraAppBar extends StatelessWidget implements PreferredSizeWidget {
                 child: Container(
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                    horizontal: 20,
+                    vertical: 12,
                   ),
                   child: Text(
                     title,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2.0,
+                      fontSize: 18,
                     ),
                   ),
                 ),
