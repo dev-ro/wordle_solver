@@ -23,7 +23,7 @@ class _BokehBackgroundState extends State<BokehBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 60),
+      duration: const Duration(seconds: 45),
     )..repeat();
     _orbs = const [];
   }
@@ -52,7 +52,7 @@ class _BokehBackgroundState extends State<BokehBackground>
         }
 
         return ColoredBox(
-          color: Colors.white,
+          color: const Color(0xFF0F1115),
           child: RepaintBoundary(
             child: AnimatedBuilder(
               animation: _controller,
@@ -91,8 +91,8 @@ class _BokehBackgroundState extends State<BokehBackground>
         size.shortestSide * 0.22,
         rand.nextDouble(),
       )!;
-      final speed = lerpDouble(0.6, 1.2, rand.nextDouble())!; // very slow
-      final alpha = lerpDouble(0.12, 0.22, rand.nextDouble())!;
+      final speed = lerpDouble(1.0, 2.0, rand.nextDouble())!; // faster
+      final alpha = lerpDouble(0.16, 0.28, rand.nextDouble())!;
       final direction = rand.nextDouble() * 2 * math.pi;
       final wobble = rand.nextDouble() * 1.0 + 0.3;
 
@@ -117,8 +117,8 @@ class _BokehPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // White base fill to ensure a clean background
-    final bgPaint = Paint()..color = Colors.white;
+    // Dark base fill for better bokeh visibility
+    final bgPaint = Paint()..color = const Color(0xFF0F1115);
     canvas.drawRect(Offset.zero & size, bgPaint);
 
     final outerPaint = Paint()
@@ -133,7 +133,7 @@ class _BokehPainter extends CustomPainter {
       canvas.drawCircle(pos, orb.radius, outerPaint);
       // Inner brighter core to make the bokeh stand out in screenshots
       innerPaint.color = orb.color.withValues(
-        alpha: (orb.alpha + 0.18).clamp(0.0, 0.5),
+        alpha: (orb.alpha + 0.22).clamp(0.0, 0.6),
       );
       canvas.drawCircle(pos, orb.radius * 0.45, innerPaint);
     }
@@ -168,10 +168,10 @@ class _Orb {
 
   Offset positionAt(double t) {
     // Slow drift with slight circular wobble
-    final driftX = math.cos(direction) * speed * 40.0 * t;
-    final driftY = math.sin(direction) * speed * 40.0 * t;
-    final wobbleX = math.cos(2 * math.pi * t + direction) * wobble * 10.0;
-    final wobbleY = math.sin(2 * math.pi * t + direction) * wobble * 10.0;
+    final driftX = math.cos(direction) * speed * 70.0 * t;
+    final driftY = math.sin(direction) * speed * 70.0 * t;
+    final wobbleX = math.cos(2 * math.pi * t + direction) * wobble * 16.0;
+    final wobbleY = math.sin(2 * math.pi * t + direction) * wobble * 16.0;
 
     var x = center.dx + driftX + wobbleX;
     var y = center.dy + driftY + wobbleY;
