@@ -193,14 +193,10 @@ class _TopControls extends ConsumerWidget {
                           ? null
                           : fillerState.query.trim().split('').toSet().length,
                       onSelectWord: (word) {
-                        // Autofill current row with selected word and optionally copy (reuse existing UX)
-                        for (
-                          int i = 0;
-                          i < state.config.wordLength && i < word.length;
-                          i++
-                        ) {
-                          controller.setLetter(i, word[i]);
-                        }
+                        // Apply filler: set all tiles to black and letters
+                        ref
+                            .read(solverControllerProvider.notifier)
+                            .applyFillerWord(word);
                         if (state.config.autoCopyOnSelect) {
                           final textToCopy = '!${word.toLowerCase()}';
                           Clipboard.setData(ClipboardData(text: textToCopy));
