@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/solver_state.dart';
 import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
+import '../widgets/solver/filler_results.dart';
+import '../state/filler_state.dart';
 import '../widgets/common/aurora.dart';
 import '../widgets/common/bokeh_background.dart';
 
@@ -57,14 +59,16 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _TopControls extends StatelessWidget {
+class _TopControls extends ConsumerWidget {
   final SolverUiState state;
   final SolverController controller;
 
   const _TopControls({required this.state, required this.controller});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fillerState = ref.watch(fillerControllerProvider);
+    final fillerCtrl = ref.read(fillerControllerProvider.notifier);
     return AuroraCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +106,7 @@ class _TopControls extends StatelessWidget {
                 width: 140,
                 child: TextField(
                   decoration: const InputDecoration(
-                    labelText: 'Prefix (1 char optional)',
+                    labelText: 'Prefix',
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   maxLength: 1,
@@ -120,8 +124,8 @@ class _TopControls extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
+              Flexible(
+                flex: 1,
                 child: DropdownButtonFormField<String>(
                   value: state.config.dictionary,
                   items: const [
@@ -146,6 +150,31 @@ class _TopControls extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              Flexible(
+                flex: 2,
+                child: Tooltip(
+                  message:
+                      "Type letters like 'bhptw'. Results rank by coverage and ignore prefix/prior guesses.",
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final textCtrl = ref.watch(
+                        fillerQueryTextControllerProvider,
+                      );
+                      return TextField(
+                        controller: textCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Search fillers',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        onChanged: (v) =>
+                            fillerCtrl.setQuery(v, config: state.config),
+                        style: const TextStyle(color: Colors.white),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -165,6 +194,40 @@ class _TopControls extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, c) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (fillerState.query.isNotEmpty)
+                    FillerResults(
+                      title: 'Filler words',
+                      results: fillerState.manualResults,
+                      denominator: fillerState.query.trim().isEmpty
+                          ? null
+                          : fillerState.query.trim().split('').toSet().length,
+                      onSelectWord: (word) {
+                        // Apply filler: set all tiles to black and letters
+                        ref
+                            .read(solverControllerProvider.notifier)
+                            .applyFillerWord(word);
+                        if (state.config.autoCopyOnSelect) {
+                          final textToCopy = '!${word.toLowerCase()}';
+                          Clipboard.setData(ClipboardData(text: textToCopy));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              duration: Duration(milliseconds: 1200),
+                              content: Text('Copied filler to clipboard'),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -267,6 +330,52 @@ class _GridSection extends StatelessWidget {
                     onPressed: state.isLoading ? null : controller.resetGame,
                     icon: const Icon(Icons.refresh),
                     label: const Text('New Game'),
+                  ),
+                  const SizedBox(width: 8),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      // final fillerState = ref.watch(fillerControllerProvider);
+                      final fillerCtrl = ref.read(
+                        fillerControllerProvider.notifier,
+                      );
+                      // Gating: small candidate set and only 1–2 variable positions
+                      final remainingCount =
+                          state.lastResponse?.remainingCount ?? 999;
+                      final varPosCount =
+                          state.lastResponse?.variablePositions.length ?? 99;
+                      final canSuggest =
+                          (remainingCount < 10) &&
+                          (varPosCount >= 1 && varPosCount <= 2);
+                      final tooltip = canSuggest
+                          ? 'Auto-suggest filler words based on remaining candidates'
+                          : 'Enabled when remaining words < 10 and 1–2 variable positions remain';
+                      return Tooltip(
+                        message: tooltip,
+                        child: ElevatedButton.icon(
+                          onPressed: state.isLoading || !canSuggest
+                              ? null
+                              : () async {
+                                  final remaining =
+                                      state.lastResponse?.remainingWords ??
+                                      const <String>[];
+                                  await fillerCtrl.computeAutoSuggest(
+                                    config: state.config,
+                                    remainingCandidates: remaining,
+                                  );
+                                  // Populate manual search field with suggested variable letters
+                                  final letters = ref
+                                      .read(fillerControllerProvider.notifier)
+                                      .lastAutoSuggestLetters;
+                                  fillerCtrl.setQuery(
+                                    letters,
+                                    config: state.config,
+                                  );
+                                },
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text('Auto-suggest'),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(

@@ -11,4 +11,6 @@ echo "Running dart format with --set-exit-if-changed ..."
 dart format --set-exit-if-changed .
 echo "✅ Formatting check passed"
 
-
+echo "Running flutter analyze with --fatal-infos ..."
+flutter analyze --fatal-infos
+echo "✅ Analyze check passed"
