@@ -58,6 +58,8 @@ class AuroraHoverTile extends StatefulWidget {
   final double borderWidth;
   final bool emphasize; // for top recommendation emphasis
   final VoidCallback? onTap;
+  final Color?
+  borderColorOverride; // when provided, use solid color border instead of gradient
 
   const AuroraHoverTile({
     super.key,
@@ -67,6 +69,7 @@ class AuroraHoverTile extends StatefulWidget {
     this.borderWidth = 1.5,
     this.emphasize = false,
     this.onTap,
+    this.borderColorOverride,
   });
 
   @override
@@ -96,13 +99,19 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
           scale: baseScale * hoverScale * pressScale,
           child: Container(
             decoration: BoxDecoration(
-              gradient: kAuroraGradient,
+              color: widget.borderColorOverride,
+              gradient: widget.borderColorOverride == null
+                  ? kAuroraGradient
+                  : null,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF89CFF0).withValues(
-                    alpha: widget.emphasize ? 0.35 : (_hovered ? 0.3 : 0.18),
-                  ),
+                  color: (widget.borderColorOverride ?? const Color(0xFF89CFF0))
+                      .withValues(
+                        alpha: widget.emphasize
+                            ? 0.35
+                            : (_hovered ? 0.3 : 0.18),
+                      ),
                   blurRadius: widget.emphasize ? 22 : 16,
                   spreadRadius: 1,
                 ),
