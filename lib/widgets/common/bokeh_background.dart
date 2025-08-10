@@ -51,17 +51,20 @@ class _BokehBackgroundState extends State<BokehBackground>
           _orbs = _generateOrbs(size);
         }
 
-        return RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return CustomPaint(
-                size: size,
-                painter: _BokehPainter(time: _controller.value, orbs: _orbs),
-                isComplex: true,
-                willChange: true,
-              );
-            },
+        return ColoredBox(
+          color: Colors.white,
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                return CustomPaint(
+                  size: size,
+                  painter: _BokehPainter(time: _controller.value, orbs: _orbs),
+                  isComplex: true,
+                  willChange: true,
+                );
+              },
+            ),
           ),
         );
       },
@@ -84,14 +87,14 @@ class _BokehBackgroundState extends State<BokehBackground>
         rand.nextDouble() * size.height,
       );
       final radius = lerpDouble(
-        50,
-        size.shortestSide * 0.18,
+        60,
+        size.shortestSide * 0.22,
         rand.nextDouble(),
       )!;
       final speed = lerpDouble(0.6, 1.2, rand.nextDouble())!; // very slow
-      final alpha = lerpDouble(0.05, 0.12, rand.nextDouble())!;
+      final alpha = lerpDouble(0.08, 0.16, rand.nextDouble())!;
       final direction = rand.nextDouble() * 2 * math.pi;
-      final wobble = rand.nextDouble() * 0.8 + 0.2;
+      final wobble = rand.nextDouble() * 1.0 + 0.3;
 
       return _Orb(
         color: color.withValues(alpha: alpha),

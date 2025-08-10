@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 /// Aurora gradient used for borders, highlights, and glows.
@@ -9,7 +10,7 @@ const LinearGradient kAuroraGradient = LinearGradient(
 
 /// Semi-transparent dark glass background for cards.
 /// Increased transparency per UI update for animated white background.
-BoxDecoration glassDecoration({double radius = 16, double opacity = 0.2}) {
+BoxDecoration glassDecoration({double radius = 16, double opacity = 0.16}) {
   return BoxDecoration(
     color: const Color(0xFF0E0E12).withValues(alpha: opacity),
     borderRadius: BorderRadius.circular(radius),
@@ -122,12 +123,64 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
               margin: EdgeInsets.all(widget.borderWidth),
               padding: widget.padding,
               decoration: BoxDecoration(
-                color: const Color(0xFF15151A).withValues(alpha: 0.38),
+                color: const Color(0xFF15151A).withValues(alpha: 0.28),
                 borderRadius: BorderRadius.circular(
                   widget.borderRadius - widget.borderWidth,
                 ),
               ),
               child: widget.child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-width glassy AppBar matching `AuroraCard` styling.
+class AuroraAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+
+  const AuroraAppBar({super.key, required this.title});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 18);
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: kAuroraGradient,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(1.5),
+            decoration: glassDecoration(radius: 14.5, opacity: 0.16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14.5),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.8,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

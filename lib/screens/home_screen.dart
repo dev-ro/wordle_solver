@@ -8,7 +8,6 @@ import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
 import '../widgets/common/aurora.dart';
 import '../widgets/common/bokeh_background.dart';
-import 'dart:ui' as ui;
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -40,48 +39,9 @@ class HomeScreen extends ConsumerWidget {
             const BokehBackground(),
             Scaffold(
               backgroundColor: Colors.transparent,
-              appBar: AppBar(
-                backgroundColor: Colors.transparent,
-                title: Container(
-                  decoration: BoxDecoration(
-                    gradient: kAuroraGradient,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF000000).withValues(alpha: 0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 1.5,
-                    vertical: 1.5,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10.5),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
-                        ),
-                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.06),
-                        child: const Text(
-                          'WORDLE SOLVER',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.8,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                centerTitle: true,
+              appBar: const PreferredSize(
+                preferredSize: Size.fromHeight(kToolbarHeight + 18),
+                child: AuroraAppBar(title: 'WORDLE SOLVER'),
               ),
               body: Center(
                 child: ConstrainedBox(
