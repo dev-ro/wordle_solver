@@ -80,36 +80,62 @@ class _BokehBackgroundState extends State<BokehBackground>
         ? 10
         : (size.shortestSide < 900 ? 14 : 18);
 
-    return List.generate(baseCount, (i) {
-      final color = colors[i % colors.length];
+    // Use a jittered grid layout to avoid visible clustering
+    final cols = (math.sqrt(baseCount)).ceil();
+    final rows = (baseCount / cols).ceil();
+    final cellW = size.width / cols;
+    final cellH = size.height / rows;
+
+    final orbs = <_Orb>[];
+    for (int i = 0; i < baseCount; i++) {
+      final r = i ~/ cols;
+      final c = i % cols;
+
+      final jitterX = (rand.nextDouble() - 0.5) * cellW * 0.6;
+      final jitterY = (rand.nextDouble() - 0.5) * cellH * 0.6;
+
       final center = Offset(
-        rand.nextDouble() * size.width,
-        rand.nextDouble() * size.height,
+        (c + 0.5) * cellW + jitterX,
+        (r + 0.5) * cellH + jitterY,
       );
+
+      final color = colors[i % colors.length];
       final radius = lerpDouble(
         60,
         size.shortestSide * 0.22,
         rand.nextDouble(),
       )!;
-      final speed = lerpDouble(
-        1.2,
-        2.4,
-        rand.nextDouble(),
-      )!; // slightly faster again
       final alpha = lerpDouble(0.16, 0.28, rand.nextDouble())!;
-      final direction = rand.nextDouble() * 2 * math.pi;
-      final wobble = rand.nextDouble() * 1.0 + 0.3;
 
-      return _Orb(
-        color: color.withValues(alpha: alpha),
-        center: center,
-        radius: radius,
-        speed: speed,
-        direction: direction,
-        wobble: wobble,
-        bounds: size,
+      // Seamless periodic motion parameters (integer frequencies)
+      final freqX = 1 + rand.nextInt(3); // 1..3
+      final freqY = 1 + rand.nextInt(3); // 1..3
+      final phaseX = rand.nextDouble() * 2 * math.pi;
+      final phaseY = rand.nextDouble() * 2 * math.pi;
+      final amplitude = lerpDouble(40, 85, rand.nextDouble())!;
+      final wobbleAmp = lerpDouble(8, 16, rand.nextDouble())!;
+      final wobbleFreq = 2 + rand.nextInt(3); // 2..4
+      final wobblePhase = rand.nextDouble() * 2 * math.pi;
+
+      orbs.add(
+        _Orb(
+          color: color.withValues(alpha: alpha),
+          center: center,
+          radius: radius,
+          freqX: freqX,
+          freqY: freqY,
+          phaseX: phaseX,
+          phaseY: phaseY,
+          amplitude: amplitude,
+          wobbleAmp: wobbleAmp,
+          wobbleFreq: wobbleFreq,
+          wobblePhase: wobblePhase,
+          bounds: size,
+        ),
       );
-    });
+    }
+
+    return orbs;
   }
 }
 
@@ -153,39 +179,44 @@ class _Orb {
   final Color color;
   final Offset center;
   final double radius;
-  final double speed; // units per cycle
-  final double direction; // radians
-  final double wobble; // amplitude factor
+  final int freqX;
+  final int freqY;
+  final double phaseX;
+  final double phaseY;
+  final double amplitude;
+  final double wobbleAmp;
+  final int wobbleFreq;
+  final double wobblePhase;
   final Size bounds;
 
   const _Orb({
     required this.color,
     required this.center,
     required this.radius,
-    required this.speed,
-    required this.direction,
-    required this.wobble,
+    required this.freqX,
+    required this.freqY,
+    required this.phaseX,
+    required this.phaseY,
+    required this.amplitude,
+    required this.wobbleAmp,
+    required this.wobbleFreq,
+    required this.wobblePhase,
     required this.bounds,
   });
 
   double get alpha => color.a / 255.0;
 
   Offset positionAt(double t) {
-    // Seamless loop: use periodic Lissajous-like path that matches at t=0 and t=1
-    // t in [0,1]; convert to angle for periodic motion
-    final angle = 2 * math.pi * t * speed;
-    final driftX = math.cos(direction) * 60.0 * math.sin(angle);
-    final driftY = math.sin(direction) * 60.0 * math.cos(angle);
+    // Perfectly seamless periodic motion; t in [0,1]
+    final dx = amplitude * math.cos(2 * math.pi * (freqX * t) + phaseX);
+    final dy = amplitude * math.sin(2 * math.pi * (freqY * t) + phaseY);
 
-    // Additional periodic wobble that also loops perfectly
-    final wobbleX =
-        math.cos(2 * math.pi * t * (1.0 + wobble) + direction) * 14.0;
-    final wobbleY =
-        math.sin(2 * math.pi * t * (1.0 + wobble) + direction) * 14.0;
+    final wx =
+        wobbleAmp * math.cos(2 * math.pi * (wobbleFreq * t) + wobblePhase);
+    final wy =
+        wobbleAmp *
+        math.sin(2 * math.pi * (wobbleFreq * t) + wobblePhase + math.pi / 2);
 
-    final x = center.dx + driftX + wobbleX;
-    final y = center.dy + driftY + wobbleY;
-
-    return Offset(x, y);
+    return Offset(center.dx + dx + wx, center.dy + dy + wy);
   }
 }
