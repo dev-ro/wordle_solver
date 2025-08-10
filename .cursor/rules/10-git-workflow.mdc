@@ -73,13 +73,14 @@ git checkout -b \<branch-name\>
 
 As you work, make small, logical commits using the standards defined above.
 
-#### MANDATORY: Format, then Commit (Final Two Steps)
+#### MANDATORY: Analyze, Format, then Commit (Final Steps)
 
-- The final two steps before ANY commit that includes Dart changes are:
-  1) `dart format .`
-  2) Commit
+- The final steps before ANY commit that includes Dart changes are:
+  1) `flutter analyze --fatal-infos`
+  2) `dart format .`
+  3) Commit
 
-- Do NOT commit and then format. Always format immediately before the commit.
+- Do NOT commit and then format. Always analyze and format immediately before the commit.
 - If you make additional edits after formatting, format again before committing.
 
 ### Step 3: Select Work Item (Issues-First)
@@ -105,19 +106,20 @@ git checkout -b <type>/<scope>-#<issue-number>
 
 Once your work is ready for review, push your branch and open a PR.
 
-### REQUIRED: Format Dart code before opening PR
+### REQUIRED: Analyze and Format Dart code before opening PR
 
 CI no longer enforces formatting; developers MUST run formatting locally immediately before opening a PR to keep consistency:
 
 ```bash
+flutter analyze --fatal-infos
 dart format .
 ```
 
 Run this from the repository root.
 
 IMPORTANT:
-- If you make any changes after formatting, you MUST run `dart format .` again before committing and before opening the PR.
-- The last two steps before pushing are always: format, then commit.
+- If you make any changes after formatting, you MUST run `flutter analyze --fatal-infos` and `dart format .` again before committing and before opening the PR.
+- The last steps before pushing are always: analyze, format, then commit.
 
 ### Push your new branch to the remote repository
 
