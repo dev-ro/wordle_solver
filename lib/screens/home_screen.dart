@@ -1,4 +1,4 @@
-// import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -573,7 +573,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               }
               if (key == LogicalKeyboardKey.enter ||
                   key == LogicalKeyboardKey.numpadEnter) {
-                ctrl.requestRecommendations();
+                _submitWithFeedbackCheck(context, uiState, ctrl);
                 return;
               }
             },
@@ -595,8 +595,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                   ctrl.cycleFeedback(i);
                 },
                 onSubmit: () {
-                  // Trigger submit from Enter key
-                  ctrl.requestRecommendations();
+                  _submitWithFeedbackCheck(context, uiState, ctrl);
                 },
               ),
             ),
@@ -604,5 +603,74 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
         );
       },
     );
+  }
+
+  Future<void> _submitWithFeedbackCheck(
+    BuildContext context,
+    SolverUiState uiState,
+    SolverController ctrl,
+  ) async {
+    final current = uiState.grid.isNotEmpty
+        ? uiState.grid.last
+        : const <SolverTile>[];
+    final allBlack =
+        current.isNotEmpty &&
+        current.every((t) => t.feedback == TileFeedback.black);
+    if (!allBlack) {
+      ctrl.requestRecommendations();
+      return;
+    }
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    bool proceed = false;
+    if (isIOS) {
+      proceed =
+          await showCupertinoDialog<bool>(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: const Text('All tiles are black'),
+              content: const Text(
+                'You have not set any feedback colors. Submit anyway?',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  isDefaultAction: false,
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Set colors'),
+                ),
+                CupertinoDialogAction(
+                  isDefaultAction: true,
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Submit'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    } else {
+      proceed =
+          await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('All tiles are black'),
+              content: const Text(
+                'You have not set any feedback colors. Submit anyway?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Set colors'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Submit'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    }
+    if (proceed) {
+      ctrl.requestRecommendations();
+    }
   }
 }
