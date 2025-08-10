@@ -75,10 +75,10 @@ class _BokehBackgroundState extends State<BokehBackground>
     final rand = math.Random(42);
     final colors = kAuroraGradient.colors;
 
-    // Adapt orb count to size
+    // Adapt orb count to size (increase for stronger visibility)
     final baseCount = size.shortestSide < 500
-        ? 7
-        : (size.shortestSide < 900 ? 10 : 12);
+        ? 10
+        : (size.shortestSide < 900 ? 14 : 18);
 
     return List.generate(baseCount, (i) {
       final color = colors[i % colors.length];
@@ -92,7 +92,7 @@ class _BokehBackgroundState extends State<BokehBackground>
         rand.nextDouble(),
       )!;
       final speed = lerpDouble(0.6, 1.2, rand.nextDouble())!; // very slow
-      final alpha = lerpDouble(0.08, 0.16, rand.nextDouble())!;
+      final alpha = lerpDouble(0.12, 0.22, rand.nextDouble())!;
       final direction = rand.nextDouble() * 2 * math.pi;
       final wobble = rand.nextDouble() * 1.0 + 0.3;
 
@@ -121,13 +121,21 @@ class _BokehPainter extends CustomPainter {
     final bgPaint = Paint()..color = Colors.white;
     canvas.drawRect(Offset.zero & size, bgPaint);
 
-    final paint = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24);
+    final outerPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
+    final innerPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
 
     for (final orb in orbs) {
       final pos = orb.positionAt(time);
-      paint.color = orb.color;
-      canvas.drawCircle(pos, orb.radius, paint);
+      // Outer soft glow
+      outerPaint.color = orb.color;
+      canvas.drawCircle(pos, orb.radius, outerPaint);
+      // Inner brighter core to make the bokeh stand out in screenshots
+      innerPaint.color = orb.color.withValues(
+        alpha: (orb.alpha + 0.18).clamp(0.0, 0.5),
+      );
+      canvas.drawCircle(pos, orb.radius * 0.45, innerPaint);
     }
   }
 
@@ -155,6 +163,8 @@ class _Orb {
     required this.wobble,
     required this.bounds,
   });
+
+  double get alpha => color.a / 255.0;
 
   Offset positionAt(double t) {
     // Slow drift with slight circular wobble
