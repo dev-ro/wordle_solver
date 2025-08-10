@@ -462,12 +462,7 @@ class _RecommendationsSection extends StatelessWidget {
       child: RecommendationsPanel(
         response: state.lastResponse,
         onSelectWord: (word) {
-          // Autofill current row with selected word
-          for (int i = 0; i < state.config.wordLength && i < word.length; i++) {
-            controller.setLetter(i, word[i]);
-          }
-
-          // Auto-copy to clipboard if enabled
+          controller.applyWordToCurrentRow(word);
           if (state.config.autoCopyOnSelect) {
             final textToCopy = '!${word.toLowerCase()}';
             Clipboard.setData(ClipboardData(text: textToCopy));
@@ -504,6 +499,7 @@ class _FocusableFeedbackRow extends StatefulWidget {
 class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   late List<FocusNode> _nodes;
   late final FocusScopeNode _rowScope = FocusScopeNode();
+  late final FocusNode _rawKeyFocusNode = FocusNode(skipTraversal: true);
 
   @override
   void initState() {
@@ -536,6 +532,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   @override
   void dispose() {
     _rowScope.dispose();
+    _rawKeyFocusNode.dispose();
     for (final n in _nodes) {
       n.dispose();
     }
@@ -545,40 +542,58 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   @override
   Widget build(BuildContext context) {
     // Allow typing anywhere to flow through focused tile; tap anywhere on row to focus first empty
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        final firstEmptyIndex = widget.tiles.indexWhere(
-          (t) => t.letter.isEmpty,
-        );
-        final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
-        _nodes[targetIndex].requestFocus();
-      },
-      child: FocusScope(
-        node: _rowScope,
-        autofocus: true,
-        child: Consumer(
-          builder: (context, ref, _) {
-            final uiState = ref.watch(solverControllerProvider);
-            final ctrl = ref.read(solverControllerProvider.notifier);
-            return FeedbackRow(
-              tiles: widget.tiles,
-              onToggleFeedback: widget.onToggleFeedback,
-              onLetterChanged: widget.onLetterChanged,
-              maxWidth: widget.maxWidth,
-              focusNodes: _nodes,
-              lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
-              selectedIndex: uiState.selectedIndex,
-              onSelect: (i) {
-                ctrl.selectTile(i);
-              },
-              onDoubleTap: (i) {
-                ctrl.cycleFeedback(i);
-              },
+    return Consumer(
+      builder: (context, ref, _) {
+        final uiState = ref.watch(solverControllerProvider);
+        final ctrl = ref.read(solverControllerProvider.notifier);
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            final firstEmptyIndex = widget.tiles.indexWhere(
+              (t) => t.letter.isEmpty,
             );
+            final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+            _nodes[targetIndex].requestFocus();
           },
-        ),
-      ),
+          child: RawKeyboardListener(
+            focusNode: _rawKeyFocusNode,
+            onKey: (event) {
+              if (event is! RawKeyDownEvent) return;
+              final key = event.logicalKey;
+              // Letters A-Z
+              final keyLabel = key.keyLabel;
+              if (keyLabel.length == 1 &&
+                  RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
+                ctrl.setLetterAtNextAvailable(keyLabel);
+                return;
+              }
+              if (key == LogicalKeyboardKey.backspace) {
+                ctrl.backspaceAtPreviousEditable();
+                return;
+              }
+            },
+            child: FocusScope(
+              node: _rowScope,
+              autofocus: true,
+              child: FeedbackRow(
+                tiles: widget.tiles,
+                onToggleFeedback: widget.onToggleFeedback,
+                onLetterChanged: widget.onLetterChanged,
+                maxWidth: widget.maxWidth,
+                focusNodes: _nodes,
+                lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
+                selectedIndex: uiState.selectedIndex,
+                onSelect: (i) {
+                  ctrl.selectTile(i);
+                },
+                onDoubleTap: (i) {
+                  ctrl.cycleFeedback(i);
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
