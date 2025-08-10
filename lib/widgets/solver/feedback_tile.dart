@@ -52,7 +52,8 @@ class FeedbackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController(text: letter.toUpperCase());
-    final bool isLocked = isPrefixLocked || feedback == TileFeedback.green;
+    // Only prefix should lock; green tiles should remain tappable to cycle colors
+    final bool isLocked = isPrefixLocked;
     final textField = Focus(
       focusNode: focusNode,
       onKeyEvent: (node, event) {
@@ -66,10 +67,13 @@ class FeedbackTile extends StatelessWidget {
       },
       child: TextField(
         textAlign: TextAlign.center,
+        textAlignVertical: TextAlignVertical.center,
         textCapitalization: TextCapitalization.characters,
         maxLength: 1,
         decoration: const InputDecoration(
           counterText: '',
+          isCollapsed: true,
+          contentPadding: EdgeInsets.zero,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -109,13 +113,13 @@ class FeedbackTile extends StatelessWidget {
             ),
           ),
           alignment: Alignment.center,
-          child: textField,
+          child: Center(child: textField),
         ),
         // Overlay tap target so a single tap toggles feedback regardless of TextField gestures
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            // Single tap selects only; long-press cycles exactly once
+            // Single tap selects only; long-press cycles; allow cycling even when green
             onTap: isLocked ? null : onTap,
             onDoubleTap: isLocked ? null : onDoubleTap,
             onLongPress: isLocked ? null : onLongPress,

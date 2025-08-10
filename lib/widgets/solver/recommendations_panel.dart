@@ -43,28 +43,43 @@ class RecommendationsPanel extends StatelessWidget {
             builder: (context, c) {
               final recs = [...response!.recommendations];
               recs.sort((a, b) => b.score.compareTo(a.score));
-              // Responsive columns: denser layout while adapting to width
-              final width = c.maxWidth;
-              final columns = width >= 800
-                  ? 4
-                  : width >= 520
-                  ? 3
-                  : 2;
+
+              // Fixed 3x3 grid, up to 9 items, rectangular tiles
+              final topCount = recs.length.clamp(0, 9);
+
+              // Compute top 3 unique scores
+              final uniqueScores = <double>[];
+              for (final r in recs) {
+                if (!uniqueScores.contains(r.score)) {
+                  uniqueScores.add(r.score);
+                }
+                if (uniqueScores.length == 3) break;
+              }
+
+              Color borderColorFor(double score) {
+                final idx = uniqueScores.indexOf(score);
+                if (idx == 0) return const Color(0xFFFFD700); // gold
+                if (idx == 1) return const Color(0xFFC0C0C0); // silver
+                if (idx == 2) return const Color(0xFFCD7F32); // bronze
+                return Colors.white24; // default
+              }
+
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
+                  crossAxisCount: 3,
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 1.2,
+                  childAspectRatio: 1.6,
                 ),
-                itemCount: recs.length.clamp(0, 12),
+                itemCount: topCount,
                 itemBuilder: (context, index) {
                   final r = recs[index];
                   return AuroraHoverTile(
                     emphasize: index == 0,
                     onTap: () => onSelectWord(r.word),
+                    borderColorOverride: borderColorFor(r.score),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -75,7 +90,7 @@ class RecommendationsPanel extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            fontSize: 15, // slightly smaller for density
+                            fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
