@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/solver_models.dart';
@@ -102,4 +103,23 @@ final fillerControllerProvider =
     StateNotifierProvider<FillerController, FillerUiState>((ref) {
       final svc = ref.watch(fillerWordsServiceProvider);
       return FillerController(service: svc);
+    });
+
+// Controller for the manual search TextField that mirrors the query in state
+final fillerQueryTextControllerProvider =
+    Provider.autoDispose<TextEditingController>((ref) {
+      final controller = TextEditingController(
+        text: ref.read(fillerControllerProvider).query,
+      );
+      // Keep controller text in sync when query changes programmatically
+      ref.listen<FillerUiState>(fillerControllerProvider, (prev, next) {
+        if (controller.text != next.query) {
+          controller.text = next.query;
+          controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: controller.text.length),
+          );
+        }
+      });
+      ref.onDispose(controller.dispose);
+      return controller;
     });

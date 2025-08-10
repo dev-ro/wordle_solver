@@ -155,14 +155,22 @@ class _TopControls extends ConsumerWidget {
                 child: Tooltip(
                   message:
                       "Type letters like 'bhptw'. Results rank by coverage and ignore prefix/prior guesses.",
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Search fillers',
-                      labelStyle: TextStyle(color: Colors.white70),
-                    ),
-                    onChanged: (v) =>
-                        fillerCtrl.setQuery(v, config: state.config),
-                    style: const TextStyle(color: Colors.white),
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final textCtrl = ref.watch(
+                        fillerQueryTextControllerProvider,
+                      );
+                      return TextField(
+                        controller: textCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Search fillers',
+                          labelStyle: TextStyle(color: Colors.white70),
+                        ),
+                        onChanged: (v) =>
+                            fillerCtrl.setQuery(v, config: state.config),
+                        style: const TextStyle(color: Colors.white),
+                      );
+                    },
                   ),
                 ),
               ),
