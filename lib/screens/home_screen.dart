@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/solver_state.dart';
 import '../widgets/solver/feedback_row.dart';
 import '../widgets/solver/recommendations_panel.dart';
+import '../widgets/solver/filler_results.dart';
+import '../state/filler_state.dart';
 import '../widgets/common/aurora.dart';
 import '../widgets/common/bokeh_background.dart';
 
@@ -57,14 +59,16 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _TopControls extends StatelessWidget {
+class _TopControls extends ConsumerWidget {
   final SolverUiState state;
   final SolverController controller;
 
   const _TopControls({required this.state, required this.controller});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fillerState = ref.watch(fillerControllerProvider);
+    final fillerCtrl = ref.read(fillerControllerProvider.notifier);
     return AuroraCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,6 +169,50 @@ class _TopControls extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, c) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search filler letters (e.g., bhptw)',
+                      filled: true,
+                    ),
+                    onChanged: (v) =>
+                        fillerCtrl.setQuery(v, config: state.config),
+                  ),
+                  const SizedBox(height: 8),
+                  if (fillerState.query.isNotEmpty)
+                    FillerResults(
+                      title: 'Filler words',
+                      results: fillerState.manualResults,
+                      onSelectWord: (word) {
+                        // Autofill current row with selected word and optionally copy (reuse existing UX)
+                        for (
+                          int i = 0;
+                          i < state.config.wordLength && i < word.length;
+                          i++
+                        ) {
+                          controller.setLetter(i, word[i]);
+                        }
+                        if (state.config.autoCopyOnSelect) {
+                          final textToCopy = '!${word.toLowerCase()}';
+                          Clipboard.setData(ClipboardData(text: textToCopy));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              duration: Duration(milliseconds: 1200),
+                              content: Text('Copied filler to clipboard'),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -267,6 +315,105 @@ class _GridSection extends StatelessWidget {
                     onPressed: state.isLoading ? null : controller.resetGame,
                     icon: const Icon(Icons.refresh),
                     label: const Text('New Game'),
+                  ),
+                  const SizedBox(width: 8),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final fillerState = ref.watch(fillerControllerProvider);
+                      final fillerCtrl = ref.read(
+                        fillerControllerProvider.notifier,
+                      );
+                      // Gating conditions
+                      final currentRow = state.grid.isNotEmpty
+                          ? state.grid.last
+                          : <SolverTile>[];
+                      final empties = currentRow
+                          .where(
+                            (t) =>
+                                t.letter.isEmpty &&
+                                t.feedback == TileFeedback.black,
+                          )
+                          .length;
+                      final canSuggest =
+                          (empties >= 1 && empties <= 2) &&
+                          (state.lastResponse?.remainingCount ?? 999) < 10;
+                      final tooltip = canSuggest
+                          ? 'Auto-suggest filler words based on remaining candidates'
+                          : 'Auto-suggest enabled when 1–2 empty tiles and remaining words < 10';
+                      return Tooltip(
+                        message: tooltip,
+                        child: ElevatedButton.icon(
+                          onPressed: state.isLoading || !canSuggest
+                              ? null
+                              : () async {
+                                  final remaining =
+                                      state.lastResponse?.remainingWords ??
+                                      const <String>[];
+                                  await fillerCtrl.computeAutoSuggest(
+                                    config: state.config,
+                                    remainingCandidates: remaining,
+                                  );
+                                  // Show a bottom sheet with results for clarity
+                                  if (context.mounted) {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: const Color(0xFF0F0F14),
+                                      isScrollControlled: true,
+                                      builder: (ctx) {
+                                        return Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: FillerResults(
+                                            title: 'Auto-suggested fillers',
+                                            results:
+                                                fillerState.autoSuggestResults,
+                                            onSelectWord: (word) {
+                                              Navigator.of(ctx).maybePop();
+                                              for (
+                                                int i = 0;
+                                                i < state.config.wordLength &&
+                                                    i < word.length;
+                                                i++
+                                              ) {
+                                                controller.setLetter(
+                                                  i,
+                                                  word[i],
+                                                );
+                                              }
+                                              if (state
+                                                  .config
+                                                  .autoCopyOnSelect) {
+                                                final textToCopy =
+                                                    '!${word.toLowerCase()}';
+                                                Clipboard.setData(
+                                                  ClipboardData(
+                                                    text: textToCopy,
+                                                  ),
+                                                );
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    duration: Duration(
+                                                      milliseconds: 1200,
+                                                    ),
+                                                    content: Text(
+                                                      'Copied filler to clipboard',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }
+                                },
+                          icon: const Icon(Icons.auto_awesome),
+                          label: const Text('Auto-suggest'),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
