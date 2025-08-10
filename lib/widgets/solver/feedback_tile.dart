@@ -54,7 +54,8 @@ class FeedbackTile extends StatelessWidget {
     final controller = TextEditingController(text: letter.toUpperCase());
     // Only prefix should lock; green tiles should remain tappable to cycle colors
     final bool isLocked = isPrefixLocked;
-    final textField = Focus(
+    // Invisible input layered under a perfectly centered display text
+    final inputField = Focus(
       focusNode: focusNode,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
@@ -66,6 +67,10 @@ class FeedbackTile extends StatelessWidget {
         return KeyEventResult.ignored;
       },
       child: TextField(
+        showCursor: false,
+        cursorColor: Colors.transparent,
+        enableInteractiveSelection: false,
+        autofocus: false,
         textAlign: TextAlign.center,
         textAlignVertical: TextAlignVertical.center,
         textCapitalization: TextCapitalization.characters,
@@ -79,9 +84,10 @@ class FeedbackTile extends StatelessWidget {
           focusedBorder: InputBorder.none,
         ),
         style: TextStyle(
-          color: _fgColor(context),
-          fontSize: side * 0.4,
+          color: Colors.transparent,
+          fontSize: side * 0.5,
           fontWeight: FontWeight.bold,
+          height: 1.0,
         ),
         controller: controller,
         readOnly: isLocked,
@@ -113,7 +119,32 @@ class FeedbackTile extends StatelessWidget {
             ),
           ),
           alignment: Alignment.center,
-          child: Center(child: textField),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Display text perfectly centered
+              Center(
+                child: Text(
+                  (letter).toUpperCase(),
+                  textAlign: TextAlign.center,
+                  strutStyle: StrutStyle(
+                    fontSize: side * 0.5,
+                    height: 1.0,
+                    leading: 0,
+                    forceStrutHeight: true,
+                  ),
+                  style: TextStyle(
+                    color: _fgColor(context),
+                    fontSize: side * 0.5,
+                    fontWeight: FontWeight.bold,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+              // Invisible full-size input to capture typing and navigation
+              Positioned.fill(child: inputField),
+            ],
+          ),
         ),
         // Overlay tap target so a single tap toggles feedback regardless of TextField gestures
         Positioned.fill(
