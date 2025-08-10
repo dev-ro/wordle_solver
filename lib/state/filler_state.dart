@@ -40,6 +40,7 @@ class FillerController extends StateNotifier<FillerUiState> {
   final FillerWordsService service;
   Timer? _debounce;
   String _lastAutoSuggestLetters = '';
+  int _manualSearchRequestId = 0; // increases with each setQuery call
 
   FillerController({required this.service})
     : super(
@@ -60,20 +61,47 @@ class FillerController extends StateNotifier<FillerUiState> {
   void setQuery(String query, {required SolverConfig config}) {
     state = state.copyWith(query: query);
     _debounce?.cancel();
+
+    // Invalidate any in-flight manual searches and capture this call's id
+    final int requestIdForThisCall = ++_manualSearchRequestId;
+
     if (query.trim().isEmpty) {
       state = state.copyWith(manualResults: [], isLoadingManual: false);
       return;
     }
+
     state = state.copyWith(isLoadingManual: true);
-    _debounce = Timer(const Duration(milliseconds: 250), () async {
+    _debounce = Timer(const Duration(milliseconds: 250), () {
+      _performManualSearch(
+        query: query,
+        config: config,
+        requestId: requestIdForThisCall,
+      );
+    });
+  }
+
+  Future<void> _performManualSearch({
+    required String query,
+    required SolverConfig config,
+    required int requestId,
+  }) async {
+    try {
       final all = await service.loadDictionary(config.dictionary);
-      // Filler manual search ignores prefix and previous guesses; only match length
       final filtered = all
           .where((w) => w.length == config.wordLength)
           .toList(growable: false);
       final results = service.findWordsWithLetters(filtered, query, n: 30);
-      state = state.copyWith(manualResults: results, isLoadingManual: false);
-    });
+
+      if (requestId == _manualSearchRequestId) {
+        state = state.copyWith(manualResults: results);
+      }
+    } catch (_) {
+      // Swallow errors to avoid leaving UI in loading state
+    } finally {
+      if (requestId == _manualSearchRequestId) {
+        state = state.copyWith(isLoadingManual: false);
+      }
+    }
   }
 
   Future<void> computeAutoSuggest({
