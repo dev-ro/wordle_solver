@@ -55,12 +55,16 @@ class SolverUiState {
     this.pendingGreenLocks,
   });
 
+  // Sentinels to allow explicitly setting nullable fields to null while
+  // preserving existing values when parameters are omitted.
+  static const Object _sentinel = Object();
+
   SolverUiState copyWith({
     SolverConfig? config,
     List<List<SolverTile>>? grid,
-    SolverResponse? lastResponse,
+    Object? lastResponse = _sentinel,
     bool? isLoading,
-    String? errorMessage,
+    Object? errorMessage = _sentinel,
     int? selectedIndex,
     bool? currentRowFeedbackTouched,
     Map<int, String>? pendingGreenLocks,
@@ -68,9 +72,13 @@ class SolverUiState {
     return SolverUiState(
       config: config ?? this.config,
       grid: grid ?? this.grid,
-      lastResponse: lastResponse ?? this.lastResponse,
+      lastResponse: identical(lastResponse, _sentinel)
+          ? this.lastResponse
+          : lastResponse as SolverResponse?,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
       selectedIndex: selectedIndex ?? this.selectedIndex,
       currentRowFeedbackTouched:
           currentRowFeedbackTouched ?? this.currentRowFeedbackTouched,
