@@ -64,65 +64,48 @@ class FeedbackTile extends StatelessWidget {
     final double selectedBorderWidth = 2.0;
     final double normalBorderWidth = 1.2;
     // Invisible input layered under a perfectly centered display text
-    final inputField = Focus(
+    final inputField = TextField(
       focusNode: focusNode,
-      onFocusChange: onFocusChange,
-      onKeyEvent: (node, event) {
-        if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        // Defer backspace entirely to the global handler so it can clear previous tiles and
-        // handle selection consistently across the row. Avoid double-processing here.
-        if (event.logicalKey == LogicalKeyboardKey.backspace) {
-          return KeyEventResult.ignored;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: TextField(
-        showCursor: false,
-        cursorColor: Colors.transparent,
-        enableInteractiveSelection: false,
-        autofocus: false,
-        // Ensures mobile soft keyboard can appear when tile gains focus
-        canRequestFocus: true,
-        // On mobile, request focus and show keyboard on long press as a fallback
-        // by enabling focus request on gestures above; additionally, ensure
-        // TextField can bring up keyboard by not setting readOnly.
-        textAlign: TextAlign.center,
-        textAlignVertical: TextAlignVertical.center,
-        textCapitalization: TextCapitalization.characters,
-        maxLength: 1,
-        decoration: const InputDecoration(
-          counterText: '',
-          isCollapsed: true,
-          contentPadding: EdgeInsets.zero,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-        ),
-        style: TextStyle(
-          color: Colors.transparent,
-          fontSize: side * 0.5,
-          fontWeight: FontWeight.bold,
-          height: 1.0,
-        ),
-        controller: controller,
-        // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
-        readOnly: false,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
-        ],
-        onChanged: (v) {
-          final lower = v.toLowerCase();
-          onLetterChanged(lower);
-          if (lower.isNotEmpty) {
-            onMoveNext?.call();
-          } else {
-            // If user cleared this tile (backspace), move to previous tile to enable
-            // subsequent backspace to clear the previous letter on mobile keyboards
-            onMovePrev?.call();
-          }
-        },
-        onSubmitted: (_) => onSubmit?.call(),
+      showCursor: false,
+      cursorColor: Colors.transparent,
+      enableInteractiveSelection: false,
+      autofocus: false,
+      // Ensures mobile soft keyboard can appear when tile gains focus
+      canRequestFocus: true,
+      textAlign: TextAlign.center,
+      textAlignVertical: TextAlignVertical.center,
+      textCapitalization: TextCapitalization.characters,
+      maxLength: 1,
+      decoration: const InputDecoration(
+        counterText: '',
+        isCollapsed: true,
+        contentPadding: EdgeInsets.zero,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
       ),
+      style: TextStyle(
+        color: Colors.transparent,
+        fontSize: side * 0.5,
+        fontWeight: FontWeight.bold,
+        height: 1.0,
+      ),
+      controller: controller,
+      // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
+      readOnly: false,
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]'))],
+      onChanged: (v) {
+        final lower = v.toLowerCase();
+        onLetterChanged(lower);
+        if (lower.isNotEmpty) {
+          onMoveNext?.call();
+        } else {
+          // If user cleared this tile (backspace), move to previous tile to enable
+          // subsequent backspace to clear the previous letter on mobile keyboards
+          onMovePrev?.call();
+        }
+      },
+      onSubmitted: (_) => onSubmit?.call(),
     );
 
     final child = Stack(
@@ -172,20 +155,24 @@ class FeedbackTile extends StatelessWidget {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
+            onTap: () async {
               focusNode.requestFocus();
+              // Explicitly ask to show the soft keyboard on mobile
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
               if (!isLocked) {
                 onTap?.call();
               }
             },
-            onDoubleTap: () {
+            onDoubleTap: () async {
               focusNode.requestFocus();
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
               if (!isLocked) {
                 onDoubleTap?.call();
               }
             },
-            onLongPress: () {
+            onLongPress: () async {
               focusNode.requestFocus();
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
               if (!isLocked) {
                 onLongPress?.call();
               }
