@@ -1,6 +1,76 @@
 name: Continuous Integration
 
 on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  flutter-ci:
+    name: Flutter CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Verify Flutter installation
+        run: flutter doctor -v
+
+      - name: Analyze Flutter code
+        run: flutter analyze --fatal-infos
+
+      - name: Run Flutter tests
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Build Flutter web (debug)
+        run: flutter build web --debug
+
+      - name: Build Flutter Android APK (debug)
+        run: flutter build apk --debug
+
+  bash-scripts-check:
+    name: Bash Scripts Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check bash scripts syntax
+        run: |
+          for script in scripts/*.sh; do
+            echo "Checking $script..."
+            bash -n "$script"
+            echo "✅ $script syntax is valid"
+          done
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Test setup script
+        run: ./scripts/setup.sh || true
+
+name: Continuous Integration
+
+on:
     pull_request:
         branches: [main, develop]
     push:
