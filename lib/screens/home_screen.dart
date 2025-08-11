@@ -146,7 +146,7 @@ class _TopControls extends ConsumerWidget {
                             ),
                             const SizedBox(width: 8),
                             TextButton.icon(
-                              onPressed: () => controller.setPrefix(null),
+                              onPressed: () => controller.clearPrefix(),
                               icon: const Icon(Icons.clear, size: 16),
                               label: const Text(
                                 'Clear',
