@@ -302,7 +302,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       for (int i = idx - 1; i >= 0; i--) {
         // Ignore edit locks here to allow backspacing over locked greens/prefix
         if (currentRow[i].letter.isNotEmpty) {
-          _updateTile(i, letter: '');
+          _updateTile(i, letter: '', feedback: TileFeedback.black);
           state = state.copyWith(selectedIndex: i);
           return;
         }
@@ -314,7 +314,7 @@ class SolverController extends StateNotifier<SolverUiState> {
     }
 
     // Current tile has a letter: clear it and move selection left one.
-    _updateTile(idx, letter: '');
+    _updateTile(idx, letter: '', feedback: TileFeedback.black);
     final prev = (idx - 1).clamp(0, currentRow.length - 1);
     state = state.copyWith(selectedIndex: prev);
   }

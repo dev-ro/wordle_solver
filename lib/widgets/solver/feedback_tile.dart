@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../state/solver_state.dart';
 
-class FeedbackTile extends StatelessWidget {
+class FeedbackTile extends StatefulWidget {
   final String letter;
   final TileFeedback feedback;
   final VoidCallback? onTap;
@@ -39,8 +39,38 @@ class FeedbackTile extends StatelessWidget {
     this.onDigitShortcut,
   });
 
+  @override
+  State<FeedbackTile> createState() => _FeedbackTileState();
+}
+
+class _FeedbackTileState extends State<FeedbackTile> {
+  void _notifyFocusChange() {
+    widget.onFocusChange?.call(widget.focusNode.hasFocus);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_notifyFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant FeedbackTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_notifyFocusChange);
+      widget.focusNode.addListener(_notifyFocusChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_notifyFocusChange);
+    super.dispose();
+  }
+
   Color _bgColor(BuildContext context) {
-    switch (feedback) {
+    switch (widget.feedback) {
       case TileFeedback.green:
         return const Color(0xFF2E7D32); // deeper green for dark theme
       case TileFeedback.yellow:
@@ -60,7 +90,7 @@ class FeedbackTile extends StatelessWidget {
     const String sentinel =
         '\u200B'; // zero-width space to detect backspace on empty
     final controller = TextEditingController(
-      text: letter.isEmpty ? sentinel : letter.toUpperCase(),
+      text: widget.letter.isEmpty ? sentinel : widget.letter.toUpperCase(),
     );
     // Only prefix should lock; currently not used to block tap behavior
     final theme = Theme.of(context);
@@ -70,7 +100,7 @@ class FeedbackTile extends StatelessWidget {
     final double normalBorderWidth = 1.2;
     // Invisible input layered under a perfectly centered display text
     final inputField = TextField(
-      focusNode: focusNode,
+      focusNode: widget.focusNode,
       showCursor: false,
       cursorColor: Colors.transparent,
       enableInteractiveSelection: false,
@@ -92,7 +122,7 @@ class FeedbackTile extends StatelessWidget {
       ),
       style: TextStyle(
         color: Colors.transparent,
-        fontSize: side * 0.5,
+        fontSize: widget.side * 0.5,
         fontWeight: FontWeight.bold,
         height: 1.0,
       ),
@@ -107,17 +137,17 @@ class FeedbackTile extends StatelessWidget {
         String raw = v.replaceAll(sentinel, '');
         if (raw.isEmpty) {
           // Backspace on empty: clear this tile and move left
-          onLetterChanged('');
+          widget.onLetterChanged('');
           // Restore sentinel so further backspaces still trigger changes
           controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
-          onMovePrev?.call();
+          widget.onMovePrev?.call();
           return;
         }
         // If a digit 0-3 was entered, treat as color shortcut and clear input
         if (raw.length == 1 && RegExp(r'^[0-3]$').hasMatch(raw)) {
           final d = int.tryParse(raw);
-          if (d != null) onDigitShortcut?.call(d);
+          if (d != null) widget.onDigitShortcut?.call(d);
           controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
           return;
@@ -125,11 +155,11 @@ class FeedbackTile extends StatelessWidget {
         // Take last alpha character
         final last = raw.substring(raw.length - 1).toLowerCase();
         if (RegExp(r'^[a-z]$').hasMatch(last)) {
-          onLetterChanged(last);
+          widget.onLetterChanged(last);
           // Reset field to sentinel so it stays effectively single-char visually
           controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
-          onMoveNext?.call();
+          widget.onMoveNext?.call();
         }
       },
       onEditingComplete: () {
@@ -139,27 +169,29 @@ class FeedbackTile extends StatelessWidget {
         if (text.length == 1 && RegExp(r'^[0-3]$').hasMatch(text)) {
           final d = int.tryParse(text);
           if (d != null) {
-            onDigitShortcut?.call(d);
+            widget.onDigitShortcut?.call(d);
             controller.clear();
           }
         }
       },
-      onSubmitted: (_) => onSubmit?.call(),
+      onSubmitted: (_) => widget.onSubmit?.call(),
     );
 
     final child = Stack(
       children: [
         Container(
-          width: side,
-          height: side,
+          width: widget.side,
+          height: widget.side,
           decoration: BoxDecoration(
             color: _bgColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
+              color: widget.isSelected
                   ? selectedBorder
-                  : (isPrefixLocked ? prefixBorder : Colors.white24),
-              width: isSelected ? selectedBorderWidth : normalBorderWidth,
+                  : (widget.isPrefixLocked ? prefixBorder : Colors.white24),
+              width: widget.isSelected
+                  ? selectedBorderWidth
+                  : normalBorderWidth,
             ),
           ),
           alignment: Alignment.center,
@@ -169,17 +201,17 @@ class FeedbackTile extends StatelessWidget {
               // Display text perfectly centered
               Center(
                 child: Text(
-                  (letter).toUpperCase(),
+                  (widget.letter).toUpperCase(),
                   textAlign: TextAlign.center,
                   strutStyle: StrutStyle(
-                    fontSize: side * 0.5,
+                    fontSize: widget.side * 0.5,
                     height: 1.0,
                     leading: 0,
                     forceStrutHeight: true,
                   ),
                   style: TextStyle(
                     color: _fgColor(context),
-                    fontSize: side * 0.5,
+                    fontSize: widget.side * 0.5,
                     fontWeight: FontWeight.bold,
                     height: 1.0,
                   ),
@@ -192,37 +224,34 @@ class FeedbackTile extends StatelessWidget {
         ),
         // Overlay tap target: ensure we always focus this tile, then apply gestures
         Positioned.fill(
-          child: Focus(
-            onFocusChange: onFocusChange,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () async {
-                focusNode.requestFocus();
-                // Explicitly ask to show the soft keyboard on mobile
-                await SystemChannels.textInput.invokeMethod('TextInput.show');
-                // Move caret to end
-                controller.selection = TextSelection.collapsed(
-                  offset: controller.text.length,
-                );
-                onTap?.call();
-              },
-              onDoubleTap: () async {
-                focusNode.requestFocus();
-                await SystemChannels.textInput.invokeMethod('TextInput.show');
-                controller.selection = TextSelection.collapsed(
-                  offset: controller.text.length,
-                );
-                onDoubleTap?.call();
-              },
-              onLongPress: () async {
-                focusNode.requestFocus();
-                await SystemChannels.textInput.invokeMethod('TextInput.show');
-                controller.selection = TextSelection.collapsed(
-                  offset: controller.text.length,
-                );
-                // Long press is keyboard-only; no color cycling here
-              },
-            ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () async {
+              widget.focusNode.requestFocus();
+              // Explicitly ask to show the soft keyboard on mobile
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
+              // Move caret to end
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
+              widget.onTap?.call();
+            },
+            onDoubleTap: () async {
+              widget.focusNode.requestFocus();
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
+              widget.onDoubleTap?.call();
+            },
+            onLongPress: () async {
+              widget.focusNode.requestFocus();
+              await SystemChannels.textInput.invokeMethod('TextInput.show');
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
+              // Long press is keyboard-only; no color cycling here
+            },
           ),
         ),
       ],
