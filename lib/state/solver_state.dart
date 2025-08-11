@@ -451,6 +451,41 @@ class SolverController extends StateNotifier<SolverUiState> {
     );
   }
 
+  // Set feedback color on the most relevant tile for the user's current typing flow.
+  // If the currently selected tile is empty (because typing advanced the cursor),
+  // prefer the last non-empty editable tile so users can press the color after the letter.
+  void setFeedbackAtSelection(TileFeedback feedback) {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    int idx = state.selectedIndex ?? 0;
+    final currentRow = state.grid.last;
+    if (idx < 0 || idx >= currentRow.length) idx = 0;
+    // If the selected tile has no letter, try to color the last non-empty editable tile
+    if (currentRow[idx].letter.isEmpty) {
+      final prev = findLastEditableNonEmptyIndex();
+      if (prev != null) idx = prev;
+    }
+    // Apply feedback without moving selection so typing continues to the next tile
+    _updateTile(idx, feedback: feedback);
+    state = state.copyWith(currentRowFeedbackTouched: true);
+  }
+
+  // Reset all feedback colors in the current input row to black while preserving letters.
+  void resetCurrentRowFeedbackToBlack() {
+    if (state.grid.isEmpty) return;
+    final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
+    final current = List<SolverTile>.from(rows.removeLast());
+    for (int i = 0; i < current.length; i++) {
+      current[i] = current[i].copyWith(feedback: TileFeedback.black);
+    }
+    rows.add(current);
+    state = state.copyWith(
+      grid: rows,
+      // Keep selection as-is; mark that feedback was touched
+      currentRowFeedbackTouched: true,
+      errorMessage: null,
+    );
+  }
+
   // Apply a filler word: set all letters and mark all tiles black; store current greens
   void applyFillerWord(String word) {
     final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));

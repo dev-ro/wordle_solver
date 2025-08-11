@@ -49,6 +49,27 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
+                // Numeric shortcuts for feedback colors and reset
+                if (key == LogicalKeyboardKey.digit1 ||
+                    key == LogicalKeyboardKey.numpad1) {
+                  controller.setFeedbackAtSelection(TileFeedback.green);
+                  return;
+                }
+                if (key == LogicalKeyboardKey.digit2 ||
+                    key == LogicalKeyboardKey.numpad2) {
+                  controller.setFeedbackAtSelection(TileFeedback.yellow);
+                  return;
+                }
+                if (key == LogicalKeyboardKey.digit3 ||
+                    key == LogicalKeyboardKey.numpad3) {
+                  controller.setFeedbackAtSelection(TileFeedback.black);
+                  return;
+                }
+                if (key == LogicalKeyboardKey.digit0 ||
+                    key == LogicalKeyboardKey.numpad0) {
+                  controller.resetCurrentRowFeedbackToBlack();
+                  return;
+                }
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);
@@ -61,9 +82,9 @@ class HomeScreen extends ConsumerWidget {
               },
               child: Scaffold(
                 backgroundColor: Colors.transparent,
-                appBar: const PreferredSize(
-                  preferredSize: Size.fromHeight(kToolbarHeight + 18),
-                  child: AuroraAppBar(title: 'WORDLE SOLVER'),
+                appBar: PreferredSize(
+                  preferredSize: const Size.fromHeight(kToolbarHeight + 18),
+                  child: _AppBarWithHelp(),
                 ),
                 body: Center(
                   child: ConstrainedBox(
@@ -76,6 +97,91 @@ class HomeScreen extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _AppBarWithHelp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const AuroraAppBar(title: 'WORDLE SOLVER'),
+        // Right-aligned help button overlay within the same app bar area
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Semantics(
+                button: true,
+                label: 'Help and keyboard shortcuts',
+                child: IconButton(
+                  tooltip: 'Help and keyboard shortcuts',
+                  icon: const Icon(Icons.help_outline, color: Colors.white70),
+                  onPressed: () {
+                    final isIOS =
+                        Theme.of(context).platform == TargetPlatform.iOS;
+                    if (isIOS) {
+                      showCupertinoDialog(
+                        context: context,
+                        builder: (ctx) => CupertinoAlertDialog(
+                          title: const Text('Keyboard shortcuts'),
+                          content: const Text(
+                            'Type a letter, then press the color number:\n\n'
+                            '1: Green (correct)\n'
+                            '2: Yellow (present elsewhere)\n'
+                            '3: Black/Gray (absent)\n'
+                            '0: Reset current row to Black',
+                          ),
+                          actions: [
+                            CupertinoDialogAction(
+                              isDefaultAction: true,
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Keyboard shortcuts'),
+                          content: const SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Type a letter, then press the color number:',
+                                ),
+                                SizedBox(height: 12),
+                                Text('1: Green (correct)'),
+                                Text('2: Yellow (present elsewhere)'),
+                                Text('3: Black/Gray (absent)'),
+                                SizedBox(height: 8),
+                                Text('0: Reset current row to Black'),
+                                SizedBox(height: 12),
+                                Text('Example: A -> 1, D -> 2, I, E, U'),
+                              ],
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
