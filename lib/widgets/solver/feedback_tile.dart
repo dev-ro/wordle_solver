@@ -81,6 +81,8 @@ class FeedbackTile extends StatelessWidget {
         cursorColor: Colors.transparent,
         enableInteractiveSelection: false,
         autofocus: false,
+        // Ensures mobile soft keyboard can appear when tile gains focus
+        canRequestFocus: true,
         textAlign: TextAlign.center,
         textAlignVertical: TextAlignVertical.center,
         textCapitalization: TextCapitalization.characters,

@@ -44,7 +44,7 @@ class HomeScreen extends ConsumerWidget {
             const BokehBackground(),
             KeyboardListener(
               focusNode: gridKeyFocus,
-              autofocus: true,
+              autofocus: false,
               onKeyEvent: (event) {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
@@ -460,10 +460,11 @@ class _GridSectionState extends State<_GridSection> {
         AuroraCard(
           child: Column(
             children: [
-              // Board tap area: tapping anywhere in the rows container focuses first empty tile
+              // Board tap area: tap or long-press anywhere to focus first empty tile
               GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: _focusActiveRowFirstEmpty,
+                onLongPress: _focusActiveRowFirstEmpty,
                 child: LayoutBuilder(
                   builder: (context, c) {
                     // Prune keys for rows that no longer exist
@@ -850,6 +851,13 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
+            final firstEmptyIndex = widget.tiles.indexWhere(
+              (t) => t.letter.isEmpty,
+            );
+            final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+            _nodes[targetIndex].requestFocus();
+          },
+          onLongPress: () {
             final firstEmptyIndex = widget.tiles.indexWhere(
               (t) => t.letter.isEmpty,
             );
