@@ -51,9 +51,9 @@ class HomeScreen extends ConsumerWidget {
                 final keyLabel = key.keyLabel;
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
-                  controller.setLetterAtNextAvailable(keyLabel);
+                  controller.typeLetterAtSelection(keyLabel);
                 } else if (key == LogicalKeyboardKey.backspace) {
-                  controller.backspaceAtPreviousEditable();
+                  controller.backspaceAtSelection();
                 } else if (key == LogicalKeyboardKey.enter ||
                     key == LogicalKeyboardKey.numpadEnter) {
                   _gridSubmitWithFeedbackCheck(context, state, controller);
