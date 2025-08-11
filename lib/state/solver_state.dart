@@ -214,6 +214,28 @@ class SolverController extends StateNotifier<SolverUiState> {
     state = state.copyWith(selectedIndex: idx);
   }
 
+  // New: type a letter at the current selection index, ignoring edit locks.
+  // Overwrites any tile (including green or prefix) and then moves selection right.
+  void typeLetterAtSelection(String value) {
+    if (state.grid.isEmpty || value.isEmpty) return;
+    final lastChar = value.substring(value.length - 1).toLowerCase();
+    if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
+    final currentRow = state.grid.last;
+    int idx = state.selectedIndex ?? 0;
+    if (idx < 0 || idx >= currentRow.length) idx = 0;
+    // If overwriting a green tile, reset feedback to black
+    final existing = currentRow[idx];
+    final shouldResetToBlack =
+        existing.feedback == TileFeedback.green && existing.letter != lastChar;
+    _updateTile(
+      idx,
+      letter: lastChar,
+      feedback: shouldResetToBlack ? TileFeedback.black : null,
+    );
+    final next = (idx + 1).clamp(0, currentRow.length - 1);
+    state = state.copyWith(selectedIndex: next);
+  }
+
   // Clear the letter at the specified index if editable.
   void clearLetterAtIndex(int colIndex) {
     if (!isTileEditable(colIndex)) return;
@@ -236,6 +258,44 @@ class SolverController extends StateNotifier<SolverUiState> {
     if (prev != null) {
       state = state.copyWith(selectedIndex: prev);
     }
+  }
+
+  // New: backspace at current selection, ignoring edit locks.
+  // Clears the selected tile (even if green/prefix) and moves selection left.
+  void backspaceAtSelection() {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    final currentRow = state.grid.last;
+    int idx = state.selectedIndex ?? 0;
+    if (idx < 0 || idx >= currentRow.length) idx = currentRow.length - 1;
+    _updateTile(idx, letter: '');
+    final prev = (idx - 1).clamp(0, currentRow.length - 1);
+    state = state.copyWith(selectedIndex: prev);
+  }
+
+  // Overwrite letter at an exact index from tile input.
+  // - Always writes the provided letter regardless of feedback/prefix
+  // - If the tile was green and the letter changes, reset feedback to black
+  // - When clearing (empty value), also reset feedback to black
+  void overwriteLetterAtIndex(int colIndex, String value) {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    if (colIndex < 0 || colIndex >= state.grid.last.length) return;
+    if (value.isEmpty) {
+      _updateTile(colIndex, letter: '', feedback: TileFeedback.black);
+      state = state.copyWith(selectedIndex: colIndex);
+      return;
+    }
+    final lastChar = value.substring(value.length - 1).toLowerCase();
+    if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
+    final row = state.grid.last;
+    final existing = row[colIndex];
+    final shouldResetToBlack =
+        existing.feedback == TileFeedback.green && existing.letter != lastChar;
+    _updateTile(
+      colIndex,
+      letter: lastChar,
+      feedback: shouldResetToBlack ? TileFeedback.black : null,
+    );
+    state = state.copyWith(selectedIndex: colIndex);
   }
 
   // Fill the current row with the given word while respecting edit locks.

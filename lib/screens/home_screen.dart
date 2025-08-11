@@ -317,7 +317,7 @@ class _GridSection extends StatelessWidget {
                         _FocusableFeedbackRow(
                           tiles: state.grid[r],
                           onToggleFeedback: (i) => controller.toggleFeedback(i),
-                          onLetterChanged: (i, v) => controller.setLetter(i, v),
+                           onLetterChanged: (i, v) => controller.overwriteLetterAtIndex(i, v),
                           maxWidth: c.maxWidth - 32, // inner padding margin
                         ),
                         if (r != state.grid.length - 1)
