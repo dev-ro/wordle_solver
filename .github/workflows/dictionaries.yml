@@ -1,0 +1,19 @@
+name: Update Dictionaries
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-dictionaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure scripts are executable
+        run: chmod +x scripts/*.sh || true
+      - name: Upload dictionaries
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: ./scripts/upload-dictionaries.sh || true
+
+

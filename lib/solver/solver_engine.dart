@@ -209,12 +209,23 @@ Map<String, dynamic> computeNextMove({
     final guess = (entry['guess'] ?? '').toLowerCase();
     final fb = (entry['feedback'] ?? '').toLowerCase();
     if (guess.length != wordLength || fb.length != wordLength) {
-      continue;
+      throw ArgumentError(
+        'Invalid history entry: expected guess/feedback length $wordLength, '
+        'got guess=${guess.length}, feedback=${fb.length}.',
+      );
+    }
+    // Validate feedback characters up-front to avoid positional drift
+    for (int i = 0; i < wordLength; i++) {
+      final c = fb[i];
+      if (c != 'g' && c != 'y' && c != 'b') {
+        throw ArgumentError(
+          "Invalid feedback character at index $i: '$c' (allowed: g,y,b)",
+        );
+      }
     }
     final pairs = <(String, String)>[];
     for (int i = 0; i < wordLength; i++) {
       final c = fb[i];
-      if (c != 'g' && c != 'y' && c != 'b') continue;
       pairs.add((guess[i], c));
     }
     feedbackPerGuess.add(pairs);

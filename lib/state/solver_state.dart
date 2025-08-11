@@ -395,7 +395,12 @@ class SolverController extends StateNotifier<SolverUiState> {
         }
       }
       if (!isTileEditable(i)) continue;
-      currentRow[i] = currentRow[i].copyWith(letter: ch);
+      // Auto-green if this position is a known green and the letter matches
+      final known = _knownGreenLetterAt(i);
+      final feedback = (known != null && known == ch)
+          ? TileFeedback.green
+          : currentRow[i].feedback;
+      currentRow[i] = currentRow[i].copyWith(letter: ch, feedback: feedback);
       lastSetIndex = i;
     }
     // If prefix exists but selected word was shorter/other conditions skipped index 0,
