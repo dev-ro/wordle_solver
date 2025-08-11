@@ -192,34 +192,37 @@ class FeedbackTile extends StatelessWidget {
         ),
         // Overlay tap target: ensure we always focus this tile, then apply gestures
         Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () async {
-              focusNode.requestFocus();
-              // Explicitly ask to show the soft keyboard on mobile
-              await SystemChannels.textInput.invokeMethod('TextInput.show');
-              // Move caret to end
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
-              );
-              onTap?.call();
-            },
-            onDoubleTap: () async {
-              focusNode.requestFocus();
-              await SystemChannels.textInput.invokeMethod('TextInput.show');
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
-              );
-              onDoubleTap?.call();
-            },
-            onLongPress: () async {
-              focusNode.requestFocus();
-              await SystemChannels.textInput.invokeMethod('TextInput.show');
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
-              );
-              // Long press is keyboard-only; no color cycling here
-            },
+          child: Focus(
+            onFocusChange: onFocusChange,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () async {
+                focusNode.requestFocus();
+                // Explicitly ask to show the soft keyboard on mobile
+                await SystemChannels.textInput.invokeMethod('TextInput.show');
+                // Move caret to end
+                controller.selection = TextSelection.collapsed(
+                  offset: controller.text.length,
+                );
+                onTap?.call();
+              },
+              onDoubleTap: () async {
+                focusNode.requestFocus();
+                await SystemChannels.textInput.invokeMethod('TextInput.show');
+                controller.selection = TextSelection.collapsed(
+                  offset: controller.text.length,
+                );
+                onDoubleTap?.call();
+              },
+              onLongPress: () async {
+                focusNode.requestFocus();
+                await SystemChannels.textInput.invokeMethod('TextInput.show');
+                controller.selection = TextSelection.collapsed(
+                  offset: controller.text.length,
+                );
+                // Long press is keyboard-only; no color cycling here
+              },
+            ),
           ),
         ),
       ],

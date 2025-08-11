@@ -52,9 +52,11 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
-                // Gate: when a tile TextField is focused, let it own letters/backspace/enter.
-                // Still allow digit shortcuts to apply feedback globally.
                 final tileFocused = ref.read(tileFocusActiveProvider);
+                if (tileFocused) {
+                  // Let row-level/tile handle all keys when a tile is focused
+                  return;
+                }
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -76,10 +78,7 @@ class HomeScreen extends ConsumerWidget {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
-                // When a tile is focused, avoid handling letters/backspace/enter globally
-                if (tileFocused) {
-                  return;
-                }
+                // Letters/backspace/enter when no tile focused
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);
@@ -870,75 +869,46 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
           child: FocusScope(
             node: _rowScope,
             autofocus: true,
-            child: Focus(
-              onKeyEvent: (node, event) {
-                if (event is! KeyDownEvent) return KeyEventResult.ignored;
-                final key = event.logicalKey;
-                // Numeric shortcuts for feedback colors and reset
-                if (key == LogicalKeyboardKey.digit1 ||
-                    key == LogicalKeyboardKey.numpad1) {
-                  ctrl.setFeedbackAtSelection(TileFeedback.green);
-                  return KeyEventResult.handled;
-                }
-                if (key == LogicalKeyboardKey.digit2 ||
-                    key == LogicalKeyboardKey.numpad2) {
-                  ctrl.setFeedbackAtSelection(TileFeedback.yellow);
-                  return KeyEventResult.handled;
-                }
-                if (key == LogicalKeyboardKey.digit3 ||
-                    key == LogicalKeyboardKey.numpad3) {
-                  ctrl.setFeedbackAtSelection(TileFeedback.black);
-                  return KeyEventResult.handled;
-                }
-                if (key == LogicalKeyboardKey.digit0 ||
-                    key == LogicalKeyboardKey.numpad0) {
-                  ctrl.resetCurrentRowFeedbackToBlack();
-                  return KeyEventResult.handled;
-                }
-                // Let global handler process letters/backspace/enter to avoid duplication
-                return KeyEventResult.ignored;
+            child: FeedbackRow(
+              tiles: widget.tiles,
+              onToggleFeedback: widget.onToggleFeedback,
+              onLetterChanged: widget.onLetterChanged,
+              maxWidth: widget.maxWidth,
+              focusNodes: _nodes,
+              // Unlock prefix tile when a filler was just applied
+              lockFirstTile:
+                  (uiState.config.prefix ?? '').isNotEmpty &&
+                  !uiState.unlockPrefixThisRow,
+              selectedIndex: uiState.selectedIndex,
+              onSelect: (i) {
+                ctrl.selectTile(i);
               },
-              child: FeedbackRow(
-                tiles: widget.tiles,
-                onToggleFeedback: widget.onToggleFeedback,
-                onLetterChanged: widget.onLetterChanged,
-                maxWidth: widget.maxWidth,
-                focusNodes: _nodes,
-                // Unlock prefix tile when a filler was just applied
-                lockFirstTile:
-                    (uiState.config.prefix ?? '').isNotEmpty &&
-                    !uiState.unlockPrefixThisRow,
-                selectedIndex: uiState.selectedIndex,
-                onSelect: (i) {
-                  ctrl.selectTile(i);
-                },
-                onDoubleTap: (i) {
-                  ctrl.cycleFeedback(i);
-                },
-                onSubmit: () {
-                  _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
-                },
-                onTileFocusChange: (hasFocus) {
-                  ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
-                },
-                onDigitShortcut: (tileIndex, d) {
-                  // Handle mobile digit shortcut from tile input
-                  switch (d) {
-                    case 1:
-                      ctrl.setTileFeedback(tileIndex, TileFeedback.green);
-                      break;
-                    case 2:
-                      ctrl.setTileFeedback(tileIndex, TileFeedback.yellow);
-                      break;
-                    case 3:
-                      ctrl.setTileFeedback(tileIndex, TileFeedback.black);
-                      break;
-                    case 0:
-                      ctrl.resetCurrentRowFeedbackToBlack();
-                      break;
-                  }
-                },
-              ),
+              onDoubleTap: (i) {
+                ctrl.cycleFeedback(i);
+              },
+              onSubmit: () {
+                _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+              },
+              onTileFocusChange: (hasFocus) {
+                ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
+              },
+              onDigitShortcut: (tileIndex, d) {
+                // Handle mobile digit shortcut from tile input
+                switch (d) {
+                  case 1:
+                    ctrl.setTileFeedback(tileIndex, TileFeedback.green);
+                    break;
+                  case 2:
+                    ctrl.setTileFeedback(tileIndex, TileFeedback.yellow);
+                    break;
+                  case 3:
+                    ctrl.setTileFeedback(tileIndex, TileFeedback.black);
+                    break;
+                  case 0:
+                    ctrl.resetCurrentRowFeedbackToBlack();
+                    break;
+                }
+              },
             ),
           ),
         );
