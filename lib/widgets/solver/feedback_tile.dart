@@ -57,7 +57,11 @@ class FeedbackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = TextEditingController(text: letter.toUpperCase());
+    const String _sentinel =
+        '\u200B'; // zero-width space to detect backspace on empty
+    final controller = TextEditingController(
+      text: letter.isEmpty ? _sentinel : letter.toUpperCase(),
+    );
     // Only prefix should lock; currently not used to block tap behavior
     final theme = Theme.of(context);
     final Color selectedBorder = theme.colorScheme.primary;
@@ -76,7 +80,8 @@ class FeedbackTile extends StatelessWidget {
       textAlign: TextAlign.center,
       textAlignVertical: TextAlignVertical.center,
       textCapitalization: TextCapitalization.characters,
-      maxLength: 1,
+      // Allow one visible char plus sentinel
+      maxLength: 2,
       decoration: const InputDecoration(
         counterText: '',
         isCollapsed: true,
@@ -94,16 +99,37 @@ class FeedbackTile extends StatelessWidget {
       controller: controller,
       // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
       readOnly: false,
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]'))],
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-3\u200B]')),
+      ],
       onChanged: (v) {
-        final lower = v.toLowerCase();
-        onLetterChanged(lower);
-        if (lower.isNotEmpty) {
-          onMoveNext?.call();
-        } else {
-          // If user cleared this tile (backspace), move to previous tile to enable
-          // subsequent backspace to clear the previous letter on mobile keyboards
+        // Normalize by removing sentinel
+        String raw = v.replaceAll(_sentinel, '');
+        if (raw.isEmpty) {
+          // Backspace on empty: clear this tile and move left
+          onLetterChanged('');
+          // Restore sentinel so further backspaces still trigger changes
+          controller.text = _sentinel;
+          controller.selection = const TextSelection.collapsed(offset: 1);
           onMovePrev?.call();
+          return;
+        }
+        // If a digit 0-3 was entered, treat as color shortcut and clear input
+        if (raw.length == 1 && RegExp(r'^[0-3]$').hasMatch(raw)) {
+          final d = int.tryParse(raw);
+          if (d != null) onDigitShortcut?.call(d);
+          controller.text = _sentinel;
+          controller.selection = const TextSelection.collapsed(offset: 1);
+          return;
+        }
+        // Take last alpha character
+        final last = raw.substring(raw.length - 1).toLowerCase();
+        if (RegExp(r'^[a-z]$').hasMatch(last)) {
+          onLetterChanged(last);
+          // Reset field to sentinel so it stays effectively single-char visually
+          controller.text = _sentinel;
+          controller.selection = const TextSelection.collapsed(offset: 1);
+          onMoveNext?.call();
         }
       },
       onEditingComplete: () {
@@ -172,16 +198,26 @@ class FeedbackTile extends StatelessWidget {
               focusNode.requestFocus();
               // Explicitly ask to show the soft keyboard on mobile
               await SystemChannels.textInput.invokeMethod('TextInput.show');
+              // Move caret to end
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
               onTap?.call();
             },
             onDoubleTap: () async {
               focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
               onDoubleTap?.call();
             },
             onLongPress: () async {
               focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
+              controller.selection = TextSelection.collapsed(
+                offset: controller.text.length,
+              );
               // Long press is keyboard-only; no color cycling here
             },
           ),
