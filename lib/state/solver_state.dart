@@ -437,6 +437,35 @@ class SolverController extends StateNotifier<SolverUiState> {
     );
   }
 
+  // Validate that the current row's word is consistent with all previous
+  // feedback (history) and constraints. This does not mutate state or set
+  // loading flags. Returns false if the row is incomplete.
+  Future<bool> canConfirmWinWithCurrentRowWord() async {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return false;
+    final currentRow = state.grid.last;
+    final isComplete = !currentRow.any((t) => t.letter.isEmpty);
+    if (!isComplete) return false;
+    final guess = currentRow.map((t) => t.letter).join();
+
+    // Fast path: if we already have remaining candidates, check membership
+    final existingRemaining = state.lastResponse?.remainingWords;
+    if (existingRemaining != null && existingRemaining.isNotEmpty) {
+      return existingRemaining.contains(guess);
+    }
+
+    // Otherwise, compute candidates based on prior history only (exclude current row)
+    try {
+      final history = _toHistory();
+      final response = await repository.calculateNextMove(
+        config: state.config,
+        history: history,
+      );
+      return response.remainingWords.contains(guess);
+    } catch (_) {
+      return false;
+    }
+  }
+
   // Optional: explicit methods for docs behaviour
   void onTileTap(int index) => toggleFeedback(index);
   void onTileLongPress(int index) => toggleFeedback(index);

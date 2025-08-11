@@ -388,7 +388,7 @@ class _GridSection extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: state.isLoading
                           ? null
-                          : () {
+                          : () async {
                               // Confirm only if last row has a complete word
                               if (state.grid.isEmpty ||
                                   state.grid.last.isEmpty) {
@@ -402,6 +402,21 @@ class _GridSection extends StatelessWidget {
                                   const SnackBar(
                                     content: Text(
                                       'Enter a complete word to confirm win',
+                                    ),
+                                    duration: Duration(milliseconds: 1500),
+                                  ),
+                                );
+                                return;
+                              }
+                              // Validate against previous feedback/constraints
+                              final ok = await controller
+                                  .canConfirmWinWithCurrentRowWord();
+                              if (!context.mounted) return;
+                              if (!ok) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Word conflicts with previous feedback',
                                     ),
                                     duration: Duration(milliseconds: 1500),
                                   ),
