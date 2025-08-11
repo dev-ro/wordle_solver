@@ -464,7 +464,9 @@ class SolverController extends StateNotifier<SolverUiState> {
       final prev = findLastEditableNonEmptyIndex();
       if (prev != null) idx = prev;
     }
-    setTileFeedback(idx, feedback);
+    // Apply feedback without moving selection so typing continues to the next tile
+    _updateTile(idx, feedback: feedback);
+    state = state.copyWith(currentRowFeedbackTouched: true);
   }
 
   // Reset all feedback colors in the current input row to black while preserving letters.

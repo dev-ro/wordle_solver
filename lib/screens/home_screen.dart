@@ -49,25 +49,24 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
-                final isCtrlOrMeta =
-                    HardwareKeyboard.instance.isControlPressed ||
-                    HardwareKeyboard.instance.isMetaPressed;
-                // Global shortcuts for feedback colors and reset
-                if (isCtrlOrMeta && key == LogicalKeyboardKey.keyG) {
+                // Numeric shortcuts for feedback colors and reset
+                if (key == LogicalKeyboardKey.digit1 ||
+                    key == LogicalKeyboardKey.numpad1) {
                   controller.setFeedbackAtSelection(TileFeedback.green);
                   return;
                 }
-                if (isCtrlOrMeta && key == LogicalKeyboardKey.keyY) {
+                if (key == LogicalKeyboardKey.digit2 ||
+                    key == LogicalKeyboardKey.numpad2) {
                   controller.setFeedbackAtSelection(TileFeedback.yellow);
                   return;
                 }
-                if (isCtrlOrMeta && key == LogicalKeyboardKey.keyB) {
+                if (key == LogicalKeyboardKey.digit3 ||
+                    key == LogicalKeyboardKey.numpad3) {
                   controller.setFeedbackAtSelection(TileFeedback.black);
                   return;
                 }
-                if (HardwareKeyboard.instance.isControlPressed &&
-                    key == LogicalKeyboardKey.keyR) {
-                  // Reset current guess to black; allow browser refresh when meta is pressed on macOS
+                if (key == LogicalKeyboardKey.digit0 ||
+                    key == LogicalKeyboardKey.numpad0) {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
@@ -129,11 +128,11 @@ class _AppBarWithHelp extends StatelessWidget {
                         builder: (ctx) => CupertinoAlertDialog(
                           title: const Text('Keyboard shortcuts'),
                           content: const Text(
-                            'Type a letter, then press the color key:\n\n'
-                            'Ctrl/Cmd + G: Green (correct)\n'
-                            'Ctrl/Cmd + Y: Yellow (present elsewhere)\n'
-                            'Ctrl/Cmd + B: Black/Gray (absent)\n'
-                            'Ctrl + R: Reset current row to Black',
+                            'Type a letter, then press the color number:\n\n'
+                            '1: Green (correct)\n'
+                            '2: Yellow (present elsewhere)\n'
+                            '3: Black/Gray (absent)\n'
+                            '0: Reset current row to Black',
                           ),
                           actions: [
                             CupertinoDialogAction(
@@ -154,20 +153,16 @@ class _AppBarWithHelp extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Type a letter, then press the color key:',
+                                  'Type a letter, then press the color number:',
                                 ),
                                 SizedBox(height: 12),
-                                Text('Ctrl/Cmd + G: Green (correct)'),
-                                Text(
-                                  'Ctrl/Cmd + Y: Yellow (present elsewhere)',
-                                ),
-                                Text('Ctrl/Cmd + B: Black/Gray (absent)'),
+                                Text('1: Green (correct)'),
+                                Text('2: Yellow (present elsewhere)'),
+                                Text('3: Black/Gray (absent)'),
                                 SizedBox(height: 8),
-                                Text('Ctrl + R: Reset current row to Black'),
+                                Text('0: Reset current row to Black'),
                                 SizedBox(height: 12),
-                                Text(
-                                  'Example: A -> Ctrl/Cmd+G, D -> Ctrl/Cmd+Y, I, E, U',
-                                ),
+                                Text('Example: A -> 1, D -> 2, I, E, U'),
                               ],
                             ),
                           ),
