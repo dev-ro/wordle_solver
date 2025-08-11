@@ -97,7 +97,8 @@ class FeedbackTile extends StatelessWidget {
           height: 1.0,
         ),
         controller: controller,
-        readOnly: isLocked,
+        // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
+        readOnly: false,
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
         ],
