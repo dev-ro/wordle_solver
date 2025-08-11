@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../state/solver_state.dart';
 
+class _BackspaceIntent extends Intent {
+  const _BackspaceIntent();
+}
+
 class FeedbackTile extends StatelessWidget {
   final String letter;
   final TileFeedback feedback;
@@ -62,54 +66,59 @@ class FeedbackTile extends StatelessWidget {
     final double selectedBorderWidth = 2.0;
     final double normalBorderWidth = 1.2;
     // Invisible input layered under a perfectly centered display text
-    final inputField = Focus(
-      focusNode: focusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.backspace &&
-            controller.text.isEmpty) {
-          onMovePrev?.call();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
+    final inputField = Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.backspace): const _BackspaceIntent(),
       },
-      child: TextField(
-        focusNode: focusNode,
-        showCursor: false,
-        cursorColor: Colors.transparent,
-        enableInteractiveSelection: false,
-        autofocus: false,
-        textAlign: TextAlign.center,
-        textAlignVertical: TextAlignVertical.center,
-        textCapitalization: TextCapitalization.characters,
-        maxLength: 1,
-        decoration: const InputDecoration(
-          counterText: '',
-          isCollapsed: true,
-          contentPadding: EdgeInsets.zero,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-        ),
-        style: TextStyle(
-          color: Colors.transparent,
-          fontSize: side * 0.5,
-          fontWeight: FontWeight.bold,
-          height: 1.0,
-        ),
-        controller: controller,
-        // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
-        readOnly: false,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
-        ],
-        onChanged: (v) {
-          onLetterChanged(v.toLowerCase());
-          if (v.isNotEmpty) {
-            onMoveNext?.call();
-          }
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _BackspaceIntent: CallbackAction<_BackspaceIntent>(
+            onInvoke: (intent) {
+              if (controller.text.isEmpty) {
+                onMovePrev?.call();
+              }
+              return null;
+            },
+          ),
         },
-        onSubmitted: (_) => onSubmit?.call(),
+        child: TextField(
+          focusNode: focusNode,
+          showCursor: false,
+          cursorColor: Colors.transparent,
+          enableInteractiveSelection: false,
+          autofocus: false,
+          textAlign: TextAlign.center,
+          textAlignVertical: TextAlignVertical.center,
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 1,
+          decoration: const InputDecoration(
+            counterText: '',
+            isCollapsed: true,
+            contentPadding: EdgeInsets.zero,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+          ),
+          style: TextStyle(
+            color: Colors.transparent,
+            fontSize: side * 0.5,
+            fontWeight: FontWeight.bold,
+            height: 1.0,
+          ),
+          controller: controller,
+          // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
+          readOnly: false,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
+          ],
+          onChanged: (v) {
+            onLetterChanged(v.toLowerCase());
+            if (v.isNotEmpty) {
+              onMoveNext?.call();
+            }
+          },
+          onSubmitted: (_) => onSubmit?.call(),
+        ),
       ),
     );
 
