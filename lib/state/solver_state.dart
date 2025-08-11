@@ -112,7 +112,7 @@ class SolverController extends StateNotifier<SolverUiState> {
           selectedIndex: 0,
           currentRowFeedbackTouched: false,
           pendingGreenLocks: null,
-            unlockPrefixThisRow: false,
+          unlockPrefixThisRow: false,
         ),
       );
 
