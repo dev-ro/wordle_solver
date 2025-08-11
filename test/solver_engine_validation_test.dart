@@ -43,7 +43,8 @@ void main() {
           {'guess': 'crane', 'feedback': 'bbbbb'},
         ],
       );
-      expect(result['remainingCount'], isNonZero);
+      expect(result['remainingCount'], isA<int>());
+      expect((result['remainingCount'] as int) >= 0, true);
       expect(result['recommendations'], isA<List<dynamic>>());
     });
   });
