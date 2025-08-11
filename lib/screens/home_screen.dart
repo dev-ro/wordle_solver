@@ -913,6 +913,14 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 // When a tile is focused and empty, a backspace should delete the previous letter
                 // and move the selection left (controller handles both behaviors).
                 ctrl.backspaceAtSelection();
+                // After controller updates selectedIndex, sync actual focus to that index.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final idx =
+                      ref.read(solverControllerProvider).selectedIndex ?? 0;
+                  if (_nodes.isEmpty) return;
+                  final clamped = idx.clamp(0, _nodes.length - 1);
+                  _nodes[clamped].requestFocus();
+                });
               },
             ),
           ),

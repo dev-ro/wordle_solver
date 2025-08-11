@@ -175,16 +175,23 @@ class _FeedbackTileState extends State<FeedbackTile> {
         if (raw.isEmpty) {
           // Backspace pressed
           if (widget.letter.isEmpty) {
-            widget.onBackspaceAtEmpty?.call();
+            // Let parent handle controller-selectedIndex change and focus sync.
+            // Only fall back to moving UI focus left if no handler is provided.
+            if (widget.onBackspaceAtEmpty != null) {
+              widget.onBackspaceAtEmpty!.call();
+            } else {
+              widget.onMovePrev?.call();
+            }
           } else {
             widget.onLetterChanged('');
+            // Move focus left when deleting a non-empty tile
+            widget.onMovePrev?.call();
           }
           // Restore sentinel so further backspaces still trigger changes
           _isSettingText = true;
           _controller.text = _sentinel;
           _controller.selection = const TextSelection.collapsed(offset: 1);
           _isSettingText = false;
-          widget.onMovePrev?.call();
           return;
         }
         // If a digit 0-3 was entered anywhere in the string, treat the last char as shortcut
