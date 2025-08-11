@@ -17,6 +17,7 @@ class FeedbackTile extends StatelessWidget {
   final bool isSelected;
   final VoidCallback? onDoubleTap;
   final VoidCallback? onSubmit;
+  final ValueChanged<bool>? onFocusChange;
 
   const FeedbackTile({
     super.key,
@@ -33,6 +34,7 @@ class FeedbackTile extends StatelessWidget {
     this.isSelected = false,
     this.onDoubleTap,
     this.onSubmit,
+    this.onFocusChange,
   });
 
   Color _bgColor(BuildContext context) {
@@ -64,6 +66,7 @@ class FeedbackTile extends StatelessWidget {
     // Invisible input layered under a perfectly centered display text
     final inputField = Focus(
       focusNode: focusNode,
+      onFocusChange: onFocusChange,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.backspace &&

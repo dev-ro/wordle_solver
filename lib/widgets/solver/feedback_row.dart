@@ -14,6 +14,7 @@ class FeedbackRow extends StatelessWidget {
   final void Function(int index) onSelect;
   final void Function(int index) onDoubleTap;
   final VoidCallback? onSubmit;
+  final ValueChanged<bool>? onTileFocusChange;
 
   const FeedbackRow({
     super.key,
@@ -27,6 +28,7 @@ class FeedbackRow extends StatelessWidget {
     required this.onSelect,
     required this.onDoubleTap,
     this.onSubmit,
+    this.onTileFocusChange,
   });
 
   @override
@@ -68,6 +70,7 @@ class FeedbackRow extends StatelessWidget {
               isSelected: selectedIndex == i,
               onDoubleTap: () => onDoubleTap(i),
               onSubmit: onSubmit,
+              onFocusChange: onTileFocusChange,
             ),
         ],
       ),

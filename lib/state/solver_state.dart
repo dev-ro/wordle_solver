@@ -775,3 +775,8 @@ final gridKeyboardFocusNodeProvider = Provider<FocusNode>((ref) {
   ref.onDispose(node.dispose);
   return node;
 });
+
+// Tracks whether any tile TextField within the grid currently has focus.
+// Used to gate screen-level keyboard handling to avoid duplicate processing
+// when a tile is actively focused for typing.
+final tileFocusActiveProvider = StateProvider<bool>((ref) => false);

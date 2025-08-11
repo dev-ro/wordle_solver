@@ -49,6 +49,9 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
+                // Gate: when a tile TextField is focused, let it own letters/backspace/enter.
+                // Still allow digit shortcuts to apply feedback globally.
+                final tileFocused = ref.read(tileFocusActiveProvider);
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -68,6 +71,10 @@ class HomeScreen extends ConsumerWidget {
                 if (key == LogicalKeyboardKey.digit0 ||
                     key == LogicalKeyboardKey.numpad0) {
                   controller.resetCurrentRowFeedbackToBlack();
+                  return;
+                }
+                if (tileFocused) {
+                  // Avoid duplicate handling: the focused tile will process typing/navigation.
                   return;
                 }
                 if (keyLabel.length == 1 &&
@@ -871,6 +878,9 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               },
               onSubmit: () {
                 _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+              },
+              onTileFocusChange: (hasFocus) {
+                ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
               },
             ),
           ),
