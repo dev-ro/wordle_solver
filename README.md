@@ -66,7 +66,7 @@ Backend (Firebase Python Functions):
 
 CI/CD & Security:
 - Workflows in `.github/workflows/ci.yml` for Flutter/Python, coverage, and security scans (pip‑audit, OSV‑Scanner, TruffleHog)
-- Bash scripts: `scripts/analyze.sh`, `scripts/format.sh`, `scripts/deploy.sh`, `scripts/upload-dictionaries.sh`
+- Bash scripts: `scripts/format.sh`, `scripts/deploy.sh`, `scripts/upload-dictionaries.sh`
 
 Further reading:
 - `docs/updates/009-firebase-ci-cd-setup.md`
@@ -110,7 +110,6 @@ flutter run
 
 3) Scripts
 ```bash
-./scripts/analyze.sh
 ./scripts/format.sh
 ./scripts/deploy.sh
 ./scripts/upload-dictionaries.sh
@@ -121,8 +120,7 @@ flutter run
 - Issues‑first; one logical change per PR using Conventional Commits
 - Before committing Dart changes, run:
 ```bash
-flutter analyze --fatal-infos
-dart format .
+./scripts/format.sh
 ```
 
 Dictionary PR tips: lowercase entries, one per JSON element; include a short source/rationale.

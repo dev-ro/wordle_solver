@@ -42,6 +42,9 @@ class HomeScreen extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             const BokehBackground(),
+            // Global keyboard listener (desktop/web) remains enabled, but mobile soft keyboards
+            // won't deliver RawKeyEvents. Row-level Focus handler (below) also handles keys so
+            // typing works when a tile TextField holds focus.
             KeyboardListener(
               focusNode: gridKeyFocus,
               autofocus: true,
@@ -49,6 +52,11 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
+                final tileFocused = ref.read(tileFocusActiveProvider);
+                if (tileFocused) {
+                  // Let row-level/tile handle all keys when a tile is focused
+                  return;
+                }
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -70,6 +78,7 @@ class HomeScreen extends ConsumerWidget {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
+                // Letters/backspace/enter when no tile focused
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);
@@ -453,10 +462,11 @@ class _GridSectionState extends State<_GridSection> {
         AuroraCard(
           child: Column(
             children: [
-              // Board tap area: tapping anywhere in the rows container focuses first empty tile
+              // Board tap area: tap or long-press anywhere to focus first empty tile
               GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: _focusActiveRowFirstEmpty,
+                onLongPress: _focusActiveRowFirstEmpty,
                 child: LayoutBuilder(
                   builder: (context, c) {
                     // Prune keys for rows that no longer exist
@@ -849,6 +859,13 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
             final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
             _nodes[targetIndex].requestFocus();
           },
+          onLongPress: () {
+            final firstEmptyIndex = widget.tiles.indexWhere(
+              (t) => t.letter.isEmpty,
+            );
+            final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+            _nodes[targetIndex].requestFocus();
+          },
           child: FocusScope(
             node: _rowScope,
             autofocus: true,
@@ -871,6 +888,43 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               },
               onSubmit: () {
                 _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+              },
+              onTileFocusChange: (hasFocus) {
+                ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
+              },
+              onDigitShortcut: (tileIndex, d) {
+                // Handle mobile digit shortcut from tile input
+                // Always apply color to the intended letter tile:
+                // use setFeedbackAtSelection so if the current selection advanced
+                // to an empty tile after typing, the controller will target the
+                // last non-empty tile automatically.
+                switch (d) {
+                  case 1:
+                    ctrl.setFeedbackAtSelection(TileFeedback.green);
+                    break;
+                  case 2:
+                    ctrl.setFeedbackAtSelection(TileFeedback.yellow);
+                    break;
+                  case 3:
+                    ctrl.setFeedbackAtSelection(TileFeedback.black);
+                    break;
+                  case 0:
+                    ctrl.resetCurrentRowFeedbackToBlack();
+                    break;
+                }
+              },
+              onBackspaceAtEmpty: () {
+                // When a tile is focused and empty, a backspace should delete the previous letter
+                // and move the selection left (controller handles both behaviors).
+                ctrl.backspaceAtSelection();
+                // After controller updates selectedIndex, sync actual focus to that index.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final idx =
+                      ref.read(solverControllerProvider).selectedIndex ?? 0;
+                  if (_nodes.isEmpty) return;
+                  final clamped = idx.clamp(0, _nodes.length - 1);
+                  _nodes[clamped].requestFocus();
+                });
               },
             ),
           ),

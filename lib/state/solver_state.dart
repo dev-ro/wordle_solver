@@ -144,6 +144,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     );
   }
 
+  // Note: color controls are not locked by prefix; only historical known greens enforce green
+
   // Returns true if the tile at the given index is editable in the current row.
   // A tile is not editable when it is green or when it is the first tile with a non-empty prefix lock.
   bool isTileEditable(int colIndex) {
@@ -178,6 +180,18 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = state.grid.last;
     for (int i = currentRow.length - 1; i >= 0; i--) {
       if (isTileEditable(i) && currentRow[i].letter.isNotEmpty) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  // Find the last non-empty tile in the current row, ignoring edit locks and colors.
+  int? _findLastNonEmptyIndexIgnoringLocks() {
+    if (state.grid.isEmpty) return null;
+    final currentRow = state.grid.last;
+    for (int i = currentRow.length - 1; i >= 0; i--) {
+      if (currentRow[i].letter.isNotEmpty) {
         return i;
       }
     }
@@ -248,6 +262,7 @@ class SolverController extends StateNotifier<SolverUiState> {
     final lastChar = value.substring(value.length - 1).toLowerCase();
     if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
     final currentRow = state.grid.last;
+    // Respect the current selection index to support selection-based typing
     int idx = state.selectedIndex ?? 0;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
     final existing = currentRow[idx];
@@ -295,7 +310,25 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = state.grid.last;
     int idx = state.selectedIndex ?? 0;
     if (idx < 0 || idx >= currentRow.length) idx = currentRow.length - 1;
-    _updateTile(idx, letter: '');
+
+    // If current tile is empty, delete the nearest previous editable non-empty tile.
+    if (currentRow[idx].letter.isEmpty) {
+      for (int i = idx - 1; i >= 0; i--) {
+        // Ignore edit locks here to allow backspacing over locked greens/prefix
+        if (currentRow[i].letter.isNotEmpty) {
+          _updateTile(i, letter: '', feedback: TileFeedback.black);
+          state = state.copyWith(selectedIndex: i);
+          return;
+        }
+      }
+      // Nothing to delete; just move selection left if possible
+      final prev = (idx - 1).clamp(0, currentRow.length - 1);
+      state = state.copyWith(selectedIndex: prev);
+      return;
+    }
+
+    // Current tile has a letter: clear it and move selection left one.
+    _updateTile(idx, letter: '', feedback: TileFeedback.black);
     final prev = (idx - 1).clamp(0, currentRow.length - 1);
     state = state.copyWith(selectedIndex: prev);
   }
@@ -309,7 +342,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     if (colIndex < 0 || colIndex >= state.grid.last.length) return;
     if (value.isEmpty) {
       _updateTile(colIndex, letter: '', feedback: TileFeedback.black);
-      state = state.copyWith(selectedIndex: colIndex);
+      // Keep selection aligned with this tile when cleared; if clearing index 0, stay at 0
+      state = state.copyWith(selectedIndex: colIndex > 0 ? colIndex - 1 : 0);
       return;
     }
     final lastChar = value.substring(value.length - 1).toLowerCase();
@@ -325,7 +359,9 @@ class SolverController extends StateNotifier<SolverUiState> {
       newFeedback = TileFeedback.black;
     }
     _updateTile(colIndex, letter: lastChar, feedback: newFeedback);
-    state = state.copyWith(selectedIndex: colIndex);
+    // Move selection to next tile after typing at an index
+    final next = (colIndex + 1).clamp(0, row.length - 1);
+    state = state.copyWith(selectedIndex: next);
   }
 
   // Fill the current row with the given word while respecting edit locks.
@@ -444,7 +480,26 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void setTileFeedback(int colIndex, TileFeedback feedback) {
-    _updateTile(colIndex, feedback: feedback);
+    final row = state.grid.last;
+    if (colIndex < 0 || colIndex >= row.length) return;
+    // Only color tiles that have a letter
+    if (row[colIndex].letter.isEmpty) return;
+    // If history indicates this position-letter is green, enforce green
+    final known = _knownGreenLetterAt(colIndex);
+    if (known != null && known == row[colIndex].letter.toLowerCase()) {
+      _updateTile(colIndex, feedback: TileFeedback.green);
+      state = state.copyWith(
+        selectedIndex: colIndex,
+        currentRowFeedbackTouched: true,
+      );
+      return;
+    }
+    final current = row[colIndex];
+    // Toggle: requesting the same color again reverts to black
+    final nextColor = (current.feedback == feedback)
+        ? TileFeedback.black
+        : feedback;
+    _updateTile(colIndex, feedback: nextColor);
     state = state.copyWith(
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
@@ -459,13 +514,29 @@ class SolverController extends StateNotifier<SolverUiState> {
     int idx = state.selectedIndex ?? 0;
     final currentRow = state.grid.last;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
-    // If the selected tile has no letter, try to color the last non-empty editable tile
+    // If the selected tile has no letter, try to color the last non-empty tile.
+    // Prefer editable, but if none (e.g., it's green), fall back to any non-empty index.
     if (currentRow[idx].letter.isEmpty) {
-      final prev = findLastEditableNonEmptyIndex();
+      int? prev = findLastEditableNonEmptyIndex();
+      prev ??= _findLastNonEmptyIndexIgnoringLocks();
       if (prev != null) idx = prev;
     }
+    // If still no letter to color, do nothing
+    if (currentRow[idx].letter.isEmpty) return;
+    // If history indicates this position-letter is green, enforce green
+    final known = _knownGreenLetterAt(idx);
+    if (known != null && known == currentRow[idx].letter.toLowerCase()) {
+      _updateTile(idx, feedback: TileFeedback.green);
+      state = state.copyWith(currentRowFeedbackTouched: true);
+      return;
+    }
+    // Toggle: requesting the same color again reverts to black
+    final current = currentRow[idx];
+    final nextColor = (current.feedback == feedback)
+        ? TileFeedback.black
+        : feedback;
     // Apply feedback without moving selection so typing continues to the next tile
-    _updateTile(idx, feedback: feedback);
+    _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
   }
 
@@ -475,6 +546,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
     final current = List<SolverTile>.from(rows.removeLast());
     for (int i = 0; i < current.length; i++) {
+      final known = _knownGreenLetterAt(i);
+      if (known != null && known == current[i].letter.toLowerCase()) continue;
       current[i] = current[i].copyWith(feedback: TileFeedback.black);
     }
     rows.add(current);
@@ -748,6 +821,8 @@ class SolverController extends StateNotifier<SolverUiState> {
         pendingGreenLocks: null,
         // Once we move to the next step/row, relock prefix if present
         unlockPrefixThisRow: false,
+        // After consuming a row and appending a new one, start selection at first tile
+        selectedIndex: usedCurrentRowAsGuess ? 0 : state.selectedIndex,
       );
     } catch (e) {
       state = state.copyWith(
@@ -775,3 +850,8 @@ final gridKeyboardFocusNodeProvider = Provider<FocusNode>((ref) {
   ref.onDispose(node.dispose);
   return node;
 });
+
+// Tracks whether any tile TextField within the grid currently has focus.
+// Used to gate screen-level keyboard handling to avoid duplicate processing
+// when a tile is actively focused for typing.
+final tileFocusActiveProvider = StateProvider<bool>((ref) => false);

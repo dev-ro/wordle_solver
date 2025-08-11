@@ -159,9 +159,8 @@ Recommended branch protection rules for `main`:
 
 ```bash
 # Test locally
-flutter analyze
+./scripts/format.sh
 flutter test
-dart format --set-exit-if-changed .
 
 # Validate Firebase config
 firebase projects:list
