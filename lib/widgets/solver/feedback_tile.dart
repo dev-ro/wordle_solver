@@ -77,7 +77,6 @@ class FeedbackTile extends StatelessWidget {
         return KeyEventResult.ignored;
       },
       child: TextField(
-        focusNode: focusNode,
         showCursor: false,
         cursorColor: Colors.transparent,
         enableInteractiveSelection: false,
