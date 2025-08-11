@@ -43,6 +43,9 @@ class SolverUiState {
   currentRowFeedbackTouched; // whether user edited feedback on current row
   final Map<int, String>?
   pendingGreenLocks; // temporary greens when applying filler
+  // When true, temporarily unlock the prefix tile (first tile) for the current row.
+  // This is set when a filler word is applied so the user can change its color.
+  final bool unlockPrefixThisRow;
 
   const SolverUiState({
     required this.config,
@@ -53,6 +56,7 @@ class SolverUiState {
     required this.selectedIndex,
     required this.currentRowFeedbackTouched,
     this.pendingGreenLocks,
+    this.unlockPrefixThisRow = false,
   });
 
   // Sentinels to allow explicitly setting nullable fields to null while
@@ -68,6 +72,7 @@ class SolverUiState {
     int? selectedIndex,
     bool? currentRowFeedbackTouched,
     Map<int, String>? pendingGreenLocks,
+    bool? unlockPrefixThisRow,
   }) {
     return SolverUiState(
       config: config ?? this.config,
@@ -83,6 +88,7 @@ class SolverUiState {
       currentRowFeedbackTouched:
           currentRowFeedbackTouched ?? this.currentRowFeedbackTouched,
       pendingGreenLocks: pendingGreenLocks ?? this.pendingGreenLocks,
+      unlockPrefixThisRow: unlockPrefixThisRow ?? this.unlockPrefixThisRow,
     );
   }
 }
@@ -106,6 +112,7 @@ class SolverController extends StateNotifier<SolverUiState> {
           selectedIndex: 0,
           currentRowFeedbackTouched: false,
           pendingGreenLocks: null,
+            unlockPrefixThisRow: false,
         ),
       );
 
@@ -133,6 +140,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: 0,
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
+      unlockPrefixThisRow: false,
     );
   }
 
@@ -144,6 +152,10 @@ class SolverController extends StateNotifier<SolverUiState> {
     if (colIndex < 0 || colIndex >= currentRow.length) return false;
     final isPrefixLocked =
         (state.config.prefix ?? '').isNotEmpty && colIndex == 0;
+    // Allow editing the prefix tile for this row when explicitly unlocked
+    if (isPrefixLocked && state.unlockPrefixThisRow) {
+      return true;
+    }
     if (isPrefixLocked) return false;
     return currentRow[colIndex].feedback != TileFeedback.green;
   }
@@ -270,6 +282,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: 0,
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
+      unlockPrefixThisRow: false,
     );
   }
 
@@ -314,7 +327,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   void clearPrefix() {
     setPrefix(null);
     // Ensure selection returns to the first tile for convenient typing
-    state = state.copyWith(selectedIndex: 0);
+    state = state.copyWith(selectedIndex: 0, unlockPrefixThisRow: false);
   }
 
   void setLetter(int colIndex, String value) {
@@ -377,6 +390,8 @@ class SolverController extends StateNotifier<SolverUiState> {
       pendingGreenLocks: greens.isEmpty ? null : greens,
       currentRowFeedbackTouched: true,
       errorMessage: null,
+      // Unlock prefix for this row to allow changing its color when using a filler
+      unlockPrefixThisRow: true,
     );
   }
 
@@ -405,6 +420,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: 0,
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
+      unlockPrefixThisRow: false,
     );
   }
 
@@ -605,6 +621,8 @@ class SolverController extends StateNotifier<SolverUiState> {
         errorMessage: null,
         currentRowFeedbackTouched: false,
         pendingGreenLocks: null,
+        // Once we move to the next step/row, relock prefix if present
+        unlockPrefixThisRow: false,
       );
     } catch (e) {
       state = state.copyWith(
