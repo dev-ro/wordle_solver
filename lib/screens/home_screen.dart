@@ -294,38 +294,77 @@ class _TopControls extends ConsumerWidget {
   }
 }
 
-class _GridSection extends StatelessWidget {
+class _GridSection extends StatefulWidget {
   final SolverUiState state;
   final SolverController controller;
 
   const _GridSection({required this.state, required this.controller});
+  @override
+  State<_GridSection> createState() => _GridSectionState();
+}
+
+class _GridSectionState extends State<_GridSection> {
+  final GlobalKey<_FocusableFeedbackRowState> _activeRowKey =
+      GlobalKey<_FocusableFeedbackRowState>();
+
+  void _focusActiveRowFirstEmpty() {
+    _activeRowKey.currentState?.focusFirstEmpty();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isNarrow = MediaQuery.of(context).size.width <= 480;
+    final compactButtonStyle = ElevatedButton.styleFrom(
+      padding: EdgeInsets.symmetric(
+        horizontal: isNarrow ? 8 : 12,
+        vertical: isNarrow ? 8 : 10,
+      ),
+      minimumSize: Size(isNarrow ? 0 : 0, isNarrow ? 36 : 40),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: isNarrow
+          ? const VisualDensity(horizontal: -2, vertical: -2)
+          : null,
+    );
+
+    final labelTextStyle = isNarrow ? const TextStyle(fontSize: 12) : null;
+
+    final state = widget.state;
+    final controller = widget.controller;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuroraCard(
           child: Column(
             children: [
-              LayoutBuilder(
-                builder: (context, c) {
-                  return Column(
-                    children: [
-                      for (int r = 0; r < state.grid.length; r++) ...[
-                        _FocusableFeedbackRow(
-                          tiles: state.grid[r],
-                          onToggleFeedback: (i) => controller.toggleFeedback(i),
-                           onLetterChanged: (i, v) => controller.overwriteLetterAtIndex(i, v),
-                          maxWidth: c.maxWidth - 32, // inner padding margin
-                        ),
-                        if (r != state.grid.length - 1)
-                          const SizedBox(height: 12),
+              // Board tap area: tapping anywhere in the rows container focuses first empty tile
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _focusActiveRowFirstEmpty,
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    return Column(
+                      children: [
+                        for (int r = 0; r < state.grid.length; r++) ...[
+                          _FocusableFeedbackRow(
+                            key: r == state.grid.length - 1
+                                ? _activeRowKey
+                                : null,
+                            tiles: state.grid[r],
+                            onToggleFeedback: (i) =>
+                                controller.toggleFeedback(i),
+                            onLetterChanged: (i, v) =>
+                                controller.overwriteLetterAtIndex(i, v),
+                            maxWidth: c.maxWidth - 32, // inner padding margin
+                          ),
+                          if (r != state.grid.length - 1)
+                            const SizedBox(height: 12),
+                        ],
                       ],
-                    ],
-                  );
-                },
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 16),
               // Color selector: Green, Yellow (tap same color twice -> black)
@@ -388,6 +427,7 @@ class _GridSection extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ElevatedButton.icon(
+                      style: compactButtonStyle,
                       onPressed: state.isLoading
                           ? null
                           : () async {
@@ -427,8 +467,11 @@ class _GridSection extends StatelessWidget {
                               }
                               controller.confirmWin();
                             },
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('Confirm win'),
+                      icon: Icon(
+                        Icons.check_circle,
+                        size: isNarrow ? 18 : null,
+                      ),
+                      label: Text('Confirm', style: labelTextStyle),
                     ),
                   ),
                   Consumer(
@@ -437,6 +480,7 @@ class _GridSection extends StatelessWidget {
                         fillerControllerProvider.notifier,
                       );
                       return ElevatedButton.icon(
+                        style: compactButtonStyle,
                         onPressed: state.isLoading
                             ? null
                             : () {
@@ -444,15 +488,14 @@ class _GridSection extends StatelessWidget {
                                 // Clear filler query to reset the filler words list/UI
                                 fillerCtrl.setQuery('', config: state.config);
                               },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('New Game'),
+                        icon: Icon(Icons.refresh, size: isNarrow ? 18 : null),
+                        label: Text('New', style: labelTextStyle),
                       );
                     },
                   ),
                   const SizedBox(width: 8),
                   Consumer(
                     builder: (context, ref, _) {
-                      // final fillerState = ref.watch(fillerControllerProvider);
                       final fillerCtrl = ref.read(
                         fillerControllerProvider.notifier,
                       );
@@ -470,6 +513,7 @@ class _GridSection extends StatelessWidget {
                       return Tooltip(
                         message: tooltip,
                         child: ElevatedButton.icon(
+                          style: compactButtonStyle,
                           onPressed: state.isLoading || !canSuggest
                               ? null
                               : () async {
@@ -489,14 +533,18 @@ class _GridSection extends StatelessWidget {
                                     config: state.config,
                                   );
                                 },
-                          icon: const Icon(Icons.auto_awesome),
-                          label: const Text('Auto-suggest'),
+                          icon: Icon(
+                            Icons.auto_awesome,
+                            size: isNarrow ? 18 : null,
+                          ),
+                          label: Text('Suggest', style: labelTextStyle),
                         ),
                       );
                     },
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
+                    style: compactButtonStyle,
                     onPressed: state.isLoading
                         ? null
                         : () => _gridSubmitWithFeedbackCheck(
@@ -510,8 +558,8 @@ class _GridSection extends StatelessWidget {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.send_rounded),
-                    label: const Text('Submit'),
+                        : Icon(Icons.send_rounded, size: isNarrow ? 18 : null),
+                    label: Text('Submit', style: labelTextStyle),
                   ),
                 ],
               ),
@@ -608,6 +656,7 @@ class _FocusableFeedbackRow extends StatefulWidget {
   final void Function(int index, String letter) onLetterChanged;
   final double maxWidth;
   const _FocusableFeedbackRow({
+    super.key,
     required this.tiles,
     required this.onToggleFeedback,
     required this.onLetterChanged,
@@ -621,6 +670,14 @@ class _FocusableFeedbackRow extends StatefulWidget {
 class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   late List<FocusNode> _nodes;
   late final FocusScopeNode _rowScope = FocusScopeNode();
+
+  // Allow parent containers to programmatically focus the first empty tile
+  void focusFirstEmpty() {
+    if (_nodes.isEmpty) return;
+    final firstEmptyIndex = widget.tiles.indexWhere((t) => t.letter.isEmpty);
+    final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+    _nodes[targetIndex].requestFocus();
+  }
 
   @override
   void initState() {
@@ -684,9 +741,10 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               onLetterChanged: widget.onLetterChanged,
               maxWidth: widget.maxWidth,
               focusNodes: _nodes,
-                // Unlock prefix tile when a filler was just applied
-                lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty &&
-                    !uiState.unlockPrefixThisRow,
+              // Unlock prefix tile when a filler was just applied
+              lockFirstTile:
+                  (uiState.config.prefix ?? '').isNotEmpty &&
+                  !uiState.unlockPrefixThisRow,
               selectedIndex: uiState.selectedIndex,
               onSelect: (i) {
                 ctrl.selectTile(i);
