@@ -304,11 +304,20 @@ class _GridSection extends StatefulWidget {
 }
 
 class _GridSectionState extends State<_GridSection> {
-  final GlobalKey<_FocusableFeedbackRowState> _activeRowKey =
-      GlobalKey<_FocusableFeedbackRowState>();
+  // Stable keys per row index to avoid transferring state when rows are added
+  final Map<int, GlobalKey<_FocusableFeedbackRowState>> _rowKeys = {};
+
+  GlobalKey<_FocusableFeedbackRowState> _getOrCreateRowKey(int index) {
+    return _rowKeys.putIfAbsent(
+      index,
+      () => GlobalKey<_FocusableFeedbackRowState>(),
+    );
+  }
 
   void _focusActiveRowFirstEmpty() {
-    _activeRowKey.currentState?.focusFirstEmpty();
+    final rowCount = widget.state.grid.length;
+    if (rowCount == 0) return;
+    _rowKeys[rowCount - 1]?.currentState?.focusFirstEmpty();
   }
 
   @override
@@ -344,13 +353,15 @@ class _GridSectionState extends State<_GridSection> {
                 onTap: _focusActiveRowFirstEmpty,
                 child: LayoutBuilder(
                   builder: (context, c) {
+                    // Prune keys for rows that no longer exist
+                    _rowKeys.removeWhere(
+                      (index, _) => index >= state.grid.length,
+                    );
                     return Column(
                       children: [
                         for (int r = 0; r < state.grid.length; r++) ...[
                           _FocusableFeedbackRow(
-                            key: r == state.grid.length - 1
-                                ? _activeRowKey
-                                : null,
+                            key: _getOrCreateRowKey(r),
                             tiles: state.grid[r],
                             onToggleFeedback: (i) =>
                                 controller.toggleFeedback(i),
