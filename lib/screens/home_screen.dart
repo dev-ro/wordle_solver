@@ -54,7 +54,7 @@ class HomeScreen extends ConsumerWidget {
                 final keyLabel = key.keyLabel;
                 // Gate: when a tile TextField is focused, let it own letters/backspace/enter.
                 // Still allow digit shortcuts to apply feedback globally.
-                // final tileFocused = ref.read(tileFocusActiveProvider);
+                final tileFocused = ref.read(tileFocusActiveProvider);
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -76,9 +76,10 @@ class HomeScreen extends ConsumerWidget {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
-                // Do NOT gate letters/backspace/enter here; on web/desktop we need to
-                // process them globally for selection-based typing, while TextField
-                // already filters to single-character and moves focus locally.
+                // When a tile is focused, avoid handling letters/backspace/enter globally
+                if (tileFocused) {
+                  return;
+                }
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);
@@ -873,7 +874,6 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               onKeyEvent: (node, event) {
                 if (event is! KeyDownEvent) return KeyEventResult.ignored;
                 final key = event.logicalKey;
-                final keyLabel = key.keyLabel;
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -895,23 +895,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                   ctrl.resetCurrentRowFeedbackToBlack();
                   return KeyEventResult.handled;
                 }
-                // Letters
-                if (keyLabel.length == 1 &&
-                    RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
-                  ctrl.typeLetterAtSelection(keyLabel);
-                  return KeyEventResult.handled;
-                }
-                // Backspace
-                if (key == LogicalKeyboardKey.backspace) {
-                  ctrl.backspaceAtSelection();
-                  return KeyEventResult.handled;
-                }
-                // Enter
-                if (key == LogicalKeyboardKey.enter ||
-                    key == LogicalKeyboardKey.numpadEnter) {
-                  _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
-                  return KeyEventResult.handled;
-                }
+                // Let global handler process letters/backspace/enter to avoid duplication
                 return KeyEventResult.ignored;
               },
               child: FeedbackRow(

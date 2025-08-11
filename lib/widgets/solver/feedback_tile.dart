@@ -57,10 +57,10 @@ class FeedbackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const String _sentinel =
+    const String sentinel =
         '\u200B'; // zero-width space to detect backspace on empty
     final controller = TextEditingController(
-      text: letter.isEmpty ? _sentinel : letter.toUpperCase(),
+      text: letter.isEmpty ? sentinel : letter.toUpperCase(),
     );
     // Only prefix should lock; currently not used to block tap behavior
     final theme = Theme.of(context);
@@ -104,12 +104,12 @@ class FeedbackTile extends StatelessWidget {
       ],
       onChanged: (v) {
         // Normalize by removing sentinel
-        String raw = v.replaceAll(_sentinel, '');
+        String raw = v.replaceAll(sentinel, '');
         if (raw.isEmpty) {
           // Backspace on empty: clear this tile and move left
           onLetterChanged('');
           // Restore sentinel so further backspaces still trigger changes
-          controller.text = _sentinel;
+          controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
           onMovePrev?.call();
           return;
@@ -118,7 +118,7 @@ class FeedbackTile extends StatelessWidget {
         if (raw.length == 1 && RegExp(r'^[0-3]$').hasMatch(raw)) {
           final d = int.tryParse(raw);
           if (d != null) onDigitShortcut?.call(d);
-          controller.text = _sentinel;
+          controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
           return;
         }
@@ -127,7 +127,7 @@ class FeedbackTile extends StatelessWidget {
         if (RegExp(r'^[a-z]$').hasMatch(last)) {
           onLetterChanged(last);
           // Reset field to sentinel so it stays effectively single-char visually
-          controller.text = _sentinel;
+          controller.text = sentinel;
           controller.selection = const TextSelection.collapsed(offset: 1);
           onMoveNext?.call();
         }
