@@ -9,6 +9,7 @@ import '../widgets/solver/recommendations_panel.dart';
 import '../widgets/solver/filler_results.dart';
 import '../state/filler_state.dart';
 import '../widgets/common/aurora.dart';
+import '../widgets/common/footer.dart';
 import '../widgets/common/bokeh_background.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -32,6 +33,7 @@ class HomeScreen extends ConsumerWidget {
               _GridSection(state: state, controller: controller),
               const SizedBox(height: 24),
               _RecommendationsSection(state: state, controller: controller),
+              const DeveloperFooter(),
             ],
           ),
         );
