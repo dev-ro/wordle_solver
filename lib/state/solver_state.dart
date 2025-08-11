@@ -214,6 +214,33 @@ class SolverController extends StateNotifier<SolverUiState> {
     state = state.copyWith(selectedIndex: idx);
   }
 
+  // Known green letter at a column from prefix, pending locks, or history.
+  String? _knownGreenLetterAt(int colIndex) {
+    // Prefix implies first tile is green with its first char
+    final p = state.config.prefix;
+    if (colIndex == 0 && p != null && p.isNotEmpty) {
+      return p[0].toLowerCase();
+    }
+    // Pending locks captured before filler application
+    final pending = state.pendingGreenLocks;
+    if (pending != null && pending.containsKey(colIndex)) {
+      return pending[colIndex]?.toLowerCase();
+    }
+    // Scan history rows (exclude current input row)
+    if (state.grid.length > 1) {
+      for (int r = state.grid.length - 2; r >= 0; r--) {
+        final row = state.grid[r];
+        if (colIndex >= 0 && colIndex < row.length) {
+          final t = row[colIndex];
+          if (t.feedback == TileFeedback.green && t.letter.isNotEmpty) {
+            return t.letter.toLowerCase();
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   // New: type a letter at the current selection index, ignoring edit locks.
   // Overwrites any tile (including green or prefix) and then moves selection right.
   void typeLetterAtSelection(String value) {
@@ -223,15 +250,16 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = state.grid.last;
     int idx = state.selectedIndex ?? 0;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
-    // If overwriting a green tile, reset feedback to black
     final existing = currentRow[idx];
-    final shouldResetToBlack =
-        existing.feedback == TileFeedback.green && existing.letter != lastChar;
-    _updateTile(
-      idx,
-      letter: lastChar,
-      feedback: shouldResetToBlack ? TileFeedback.black : null,
-    );
+    final known = _knownGreenLetterAt(idx);
+    TileFeedback? newFeedback;
+    if (known != null && known == lastChar) {
+      newFeedback = TileFeedback.green; // auto-green when matching known green
+    } else if (existing.feedback == TileFeedback.green &&
+        existing.letter != lastChar) {
+      newFeedback = TileFeedback.black; // diff from previous green -> black
+    }
+    _updateTile(idx, letter: lastChar, feedback: newFeedback);
     final next = (idx + 1).clamp(0, currentRow.length - 1);
     state = state.copyWith(selectedIndex: next);
   }
@@ -288,13 +316,15 @@ class SolverController extends StateNotifier<SolverUiState> {
     if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
     final row = state.grid.last;
     final existing = row[colIndex];
-    final shouldResetToBlack =
-        existing.feedback == TileFeedback.green && existing.letter != lastChar;
-    _updateTile(
-      colIndex,
-      letter: lastChar,
-      feedback: shouldResetToBlack ? TileFeedback.black : null,
-    );
+    final known = _knownGreenLetterAt(colIndex);
+    TileFeedback? newFeedback;
+    if (known != null && known == lastChar) {
+      newFeedback = TileFeedback.green;
+    } else if (existing.feedback == TileFeedback.green &&
+        existing.letter != lastChar) {
+      newFeedback = TileFeedback.black;
+    }
+    _updateTile(colIndex, letter: lastChar, feedback: newFeedback);
     state = state.copyWith(selectedIndex: colIndex);
   }
 
