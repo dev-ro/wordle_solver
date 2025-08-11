@@ -144,13 +144,7 @@ class SolverController extends StateNotifier<SolverUiState> {
     );
   }
 
-  // True when the given column is the prefix-locked tile for the current row
-  // and this row has not been explicitly unlocked (e.g., by filler application).
-  bool _isPrefixLockedIndex(int colIndex) {
-    return (state.config.prefix ?? '').isNotEmpty &&
-        colIndex == 0 &&
-        !state.unlockPrefixThisRow;
-  }
+  // Note: color controls are not locked by prefix; only historical known greens enforce green
 
   // Returns true if the tile at the given index is editable in the current row.
   // A tile is not editable when it is green or when it is the first tile with a non-empty prefix lock.
@@ -462,7 +456,6 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void toggleFeedback(int colIndex) {
-    if (_isPrefixLockedIndex(colIndex)) return;
     final row = state.grid.last;
     final tile = row[colIndex];
     _updateTile(colIndex, feedback: nextFeedback(tile.feedback));
@@ -470,14 +463,25 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void cycleFeedback(int colIndex) {
-    if (_isPrefixLockedIndex(colIndex)) return;
     toggleFeedback(colIndex);
     state = state.copyWith(selectedIndex: colIndex);
   }
 
   void setTileFeedback(int colIndex, TileFeedback feedback) {
-    if (_isPrefixLockedIndex(colIndex)) return;
     final row = state.grid.last;
+    if (colIndex < 0 || colIndex >= row.length) return;
+    // Only color tiles that have a letter
+    if (row[colIndex].letter.isEmpty) return;
+    // If history indicates this position-letter is green, enforce green
+    final known = _knownGreenLetterAt(colIndex);
+    if (known != null && known == row[colIndex].letter.toLowerCase()) {
+      _updateTile(colIndex, feedback: TileFeedback.green);
+      state = state.copyWith(
+        selectedIndex: colIndex,
+        currentRowFeedbackTouched: true,
+      );
+      return;
+    }
     final current = row[colIndex];
     // Toggle: requesting the same color again reverts to black
     final nextColor = (current.feedback == feedback)
@@ -505,7 +509,13 @@ class SolverController extends StateNotifier<SolverUiState> {
     }
     // If still no letter to color, do nothing
     if (currentRow[idx].letter.isEmpty) return;
-    if (_isPrefixLockedIndex(idx)) return;
+    // If history indicates this position-letter is green, enforce green
+    final known = _knownGreenLetterAt(idx);
+    if (known != null && known == currentRow[idx].letter.toLowerCase()) {
+      _updateTile(idx, feedback: TileFeedback.green);
+      state = state.copyWith(currentRowFeedbackTouched: true);
+      return;
+    }
     // Toggle: requesting the same color again reverts to black
     final current = currentRow[idx];
     final nextColor = (current.feedback == feedback)
@@ -522,10 +532,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
     final current = List<SolverTile>.from(rows.removeLast());
     for (int i = 0; i < current.length; i++) {
-      if (_isPrefixLockedIndex(i)) {
-        // Preserve locked prefix tile's feedback (typically green)
-        continue;
-      }
+      final known = _knownGreenLetterAt(i);
+      if (known != null && known == current[i].letter.toLowerCase()) continue;
       current[i] = current[i].copyWith(feedback: TileFeedback.black);
     }
     rows.add(current);
