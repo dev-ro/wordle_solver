@@ -383,32 +383,54 @@ class _GridSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if ((state.lastResponse?.recommendations.length ?? 0) == 1)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ElevatedButton.icon(
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ElevatedButton.icon(
+                      onPressed: state.isLoading
+                          ? null
+                          : () {
+                              // Confirm only if last row has a complete word
+                              if (state.grid.isEmpty ||
+                                  state.grid.last.isEmpty) {
+                                return;
+                              }
+                              final isComplete = !state.grid.last.any(
+                                (t) => t.letter.isEmpty,
+                              );
+                              if (!isComplete) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Enter a complete word to confirm win',
+                                    ),
+                                    duration: Duration(milliseconds: 1500),
+                                  ),
+                                );
+                                return;
+                              }
+                              controller.confirmWin();
+                            },
+                      icon: const Icon(Icons.check_circle),
+                      label: const Text('Confirm win'),
+                    ),
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final fillerCtrl = ref.read(
+                        fillerControllerProvider.notifier,
+                      );
+                      return ElevatedButton.icon(
                         onPressed: state.isLoading
                             ? null
                             : () {
-                                final single =
-                                    state.lastResponse!.recommendations.first;
-                                // If current row incomplete, fill with word before confirming
-                                final isComplete = !state.grid.last.any(
-                                  (t) => t.letter.isEmpty,
-                                );
-                                if (!isComplete) {
-                                  controller.applyWordToCurrentRow(single.word);
-                                }
-                                controller.confirmWin(single.word);
+                                controller.resetGame();
+                                // Clear filler query to reset the filler words list/UI
+                                fillerCtrl.setQuery('', config: state.config);
                               },
-                        icon: const Icon(Icons.check_circle),
-                        label: const Text('Confirm win'),
-                      ),
-                    ),
-                  ElevatedButton.icon(
-                    onPressed: state.isLoading ? null : controller.resetGame,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('New Game'),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('New Game'),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
                   Consumer(
