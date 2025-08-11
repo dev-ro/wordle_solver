@@ -295,6 +295,23 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = state.grid.last;
     int idx = state.selectedIndex ?? 0;
     if (idx < 0 || idx >= currentRow.length) idx = currentRow.length - 1;
+
+    // If current tile is empty, delete the nearest previous editable non-empty tile.
+    if (currentRow[idx].letter.isEmpty) {
+      for (int i = idx - 1; i >= 0; i--) {
+        if (isTileEditable(i) && currentRow[i].letter.isNotEmpty) {
+          _updateTile(i, letter: '');
+          state = state.copyWith(selectedIndex: i);
+          return;
+        }
+      }
+      // Nothing to delete; just move selection left if possible
+      final prev = (idx - 1).clamp(0, currentRow.length - 1);
+      state = state.copyWith(selectedIndex: prev);
+      return;
+    }
+
+    // Current tile has a letter: clear it and move selection left one.
     _updateTile(idx, letter: '');
     final prev = (idx - 1).clamp(0, currentRow.length - 1);
     state = state.copyWith(selectedIndex: prev);
@@ -748,6 +765,8 @@ class SolverController extends StateNotifier<SolverUiState> {
         pendingGreenLocks: null,
         // Once we move to the next step/row, relock prefix if present
         unlockPrefixThisRow: false,
+        // After consuming a row and appending a new one, start selection at first tile
+        selectedIndex: usedCurrentRowAsGuess ? 0 : state.selectedIndex,
       );
     } catch (e) {
       state = state.copyWith(

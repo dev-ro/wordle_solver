@@ -69,12 +69,10 @@ class FeedbackTile extends StatelessWidget {
       onFocusChange: onFocusChange,
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        // Let the global handler manage letters/backspace/enter to avoid double-processing.
-        // We only intercept backspace when the tile is empty to move left for better UX.
-        if (event.logicalKey == LogicalKeyboardKey.backspace &&
-            controller.text.isEmpty) {
-          onMovePrev?.call();
-          return KeyEventResult.handled;
+        // Defer backspace entirely to the global handler so it can clear previous tiles and
+        // handle selection consistently across the row. Avoid double-processing here.
+        if (event.logicalKey == LogicalKeyboardKey.backspace) {
+          return KeyEventResult.ignored;
         }
         return KeyEventResult.ignored;
       },
