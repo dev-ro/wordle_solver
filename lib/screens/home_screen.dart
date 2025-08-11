@@ -44,14 +44,14 @@ class HomeScreen extends ConsumerWidget {
             const BokehBackground(),
             KeyboardListener(
               focusNode: gridKeyFocus,
-              autofocus: false,
+              autofocus: true,
               onKeyEvent: (event) {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
                 // Gate: when a tile TextField is focused, let it own letters/backspace/enter.
                 // Still allow digit shortcuts to apply feedback globally.
-                final tileFocused = ref.read(tileFocusActiveProvider);
+                // final tileFocused = ref.read(tileFocusActiveProvider);
                 // Numeric shortcuts for feedback colors and reset
                 if (key == LogicalKeyboardKey.digit1 ||
                     key == LogicalKeyboardKey.numpad1) {
@@ -73,10 +73,9 @@ class HomeScreen extends ConsumerWidget {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
-                if (tileFocused) {
-                  // Avoid duplicate handling: the focused tile will process typing/navigation.
-                  return;
-                }
+                // Do NOT gate letters/backspace/enter here; on web/desktop we need to
+                // process them globally for selection-based typing, while TextField
+                // already filters to single-character and moves focus locally.
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);

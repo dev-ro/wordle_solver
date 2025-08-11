@@ -68,8 +68,10 @@ class FeedbackTile extends StatelessWidget {
       focusNode: focusNode,
       onFocusChange: onFocusChange,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.backspace &&
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        // Let the global handler manage letters/backspace/enter to avoid double-processing.
+        // We only intercept backspace when the tile is empty to move left for better UX.
+        if (event.logicalKey == LogicalKeyboardKey.backspace &&
             controller.text.isEmpty) {
           onMovePrev?.call();
           return KeyEventResult.handled;
@@ -160,14 +162,28 @@ class FeedbackTile extends StatelessWidget {
             ],
           ),
         ),
-        // Overlay tap target so a single tap toggles feedback regardless of TextField gestures
+        // Overlay tap target: ensure we always focus this tile, then apply gestures
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            // Single tap selects only; long-press cycles; allow cycling even when green
-            onTap: isLocked ? null : onTap,
-            onDoubleTap: isLocked ? null : onDoubleTap,
-            onLongPress: isLocked ? null : onLongPress,
+            onTap: () {
+              focusNode.requestFocus();
+              if (!isLocked) {
+                onTap?.call();
+              }
+            },
+            onDoubleTap: () {
+              focusNode.requestFocus();
+              if (!isLocked) {
+                onDoubleTap?.call();
+              }
+            },
+            onLongPress: () {
+              focusNode.requestFocus();
+              if (!isLocked) {
+                onLongPress?.call();
+              }
+            },
           ),
         ),
       ],
