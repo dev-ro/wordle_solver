@@ -383,10 +383,69 @@ class _GridSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: state.isLoading ? null : controller.resetGame,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('New Game'),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ElevatedButton.icon(
+                      onPressed: state.isLoading
+                          ? null
+                          : () async {
+                              // Confirm only if last row has a complete word
+                              if (state.grid.isEmpty ||
+                                  state.grid.last.isEmpty) {
+                                return;
+                              }
+                              final isComplete = !state.grid.last.any(
+                                (t) => t.letter.isEmpty,
+                              );
+                              if (!isComplete) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Enter a complete word to confirm win',
+                                    ),
+                                    duration: Duration(milliseconds: 1500),
+                                  ),
+                                );
+                                return;
+                              }
+                              // Validate against previous feedback/constraints
+                              final ok = await controller
+                                  .canConfirmWinWithCurrentRowWord();
+                              if (!context.mounted) return;
+                              if (!ok) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Word conflicts with previous feedback',
+                                    ),
+                                    duration: Duration(milliseconds: 1500),
+                                  ),
+                                );
+                                return;
+                              }
+                              controller.confirmWin();
+                            },
+                      icon: const Icon(Icons.check_circle),
+                      label: const Text('Confirm win'),
+                    ),
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final fillerCtrl = ref.read(
+                        fillerControllerProvider.notifier,
+                      );
+                      return ElevatedButton.icon(
+                        onPressed: state.isLoading
+                            ? null
+                            : () {
+                                controller.resetGame();
+                                // Clear filler query to reset the filler words list/UI
+                                fillerCtrl.setQuery('', config: state.config);
+                              },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('New Game'),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
                   Consumer(

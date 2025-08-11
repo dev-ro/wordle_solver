@@ -55,12 +55,16 @@ class SolverUiState {
     this.pendingGreenLocks,
   });
 
+  // Sentinels to allow explicitly setting nullable fields to null while
+  // preserving existing values when parameters are omitted.
+  static const Object _sentinel = Object();
+
   SolverUiState copyWith({
     SolverConfig? config,
     List<List<SolverTile>>? grid,
-    SolverResponse? lastResponse,
+    Object? lastResponse = _sentinel,
     bool? isLoading,
-    String? errorMessage,
+    Object? errorMessage = _sentinel,
     int? selectedIndex,
     bool? currentRowFeedbackTouched,
     Map<int, String>? pendingGreenLocks,
@@ -68,9 +72,13 @@ class SolverUiState {
     return SolverUiState(
       config: config ?? this.config,
       grid: grid ?? this.grid,
-      lastResponse: lastResponse ?? this.lastResponse,
+      lastResponse: identical(lastResponse, _sentinel)
+          ? this.lastResponse
+          : lastResponse as SolverResponse?,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      errorMessage: identical(errorMessage, _sentinel)
+          ? this.errorMessage
+          : errorMessage as String?,
       selectedIndex: selectedIndex ?? this.selectedIndex,
       currentRowFeedbackTouched:
           currentRowFeedbackTouched ?? this.currentRowFeedbackTouched,
@@ -377,16 +385,15 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void resetGame() {
-    // New game resets everything, including prefix
+    // New game resets everything, including prefix; enforce defaults from Issue #14
     final newConfig = SolverConfig(
-      wordLength: state.config.wordLength,
+      wordLength: 5,
       prefix: null,
       dictionary: state.config.dictionary,
       autoCopyOnSelect: state.config.autoCopyOnSelect,
     );
-    final length = newConfig.wordLength;
     final newRow = List.generate(
-      length,
+      5,
       (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
     );
     state = state.copyWith(
@@ -399,6 +406,64 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
     );
+  }
+
+  // Mark the current row as a confirmed win: set all tiles to green.
+  // If a single recommendation word is provided and the current row is incomplete,
+  // fill the row with that word before setting greens.
+  void confirmWin([String? word]) {
+    if (state.grid.isEmpty) return;
+    final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
+    final currentRow = List<SolverTile>.from(rows.removeLast());
+
+    List<SolverTile> target = List<SolverTile>.from(currentRow);
+    // Optionally fill letters from provided word when length matches
+    if (word != null && word.length == target.length) {
+      for (int i = 0; i < target.length; i++) {
+        final ch = word[i].toLowerCase();
+        target[i] = target[i].copyWith(letter: ch);
+      }
+    }
+    // Set all feedback to green
+    for (int i = 0; i < target.length; i++) {
+      target[i] = target[i].copyWith(feedback: TileFeedback.green);
+    }
+
+    rows.add(target);
+    state = state.copyWith(
+      grid: rows,
+      selectedIndex: target.length - 1,
+      errorMessage: null,
+    );
+  }
+
+  // Validate that the current row's word is consistent with all previous
+  // feedback (history) and constraints. This does not mutate state or set
+  // loading flags. Returns false if the row is incomplete.
+  Future<bool> canConfirmWinWithCurrentRowWord() async {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return false;
+    final currentRow = state.grid.last;
+    final isComplete = !currentRow.any((t) => t.letter.isEmpty);
+    if (!isComplete) return false;
+    final guess = currentRow.map((t) => t.letter).join();
+
+    // Fast path: if we already have remaining candidates, check membership
+    final existingRemaining = state.lastResponse?.remainingWords;
+    if (existingRemaining != null && existingRemaining.isNotEmpty) {
+      return existingRemaining.contains(guess);
+    }
+
+    // Otherwise, compute candidates based on prior history only (exclude current row)
+    try {
+      final history = _toHistory();
+      final response = await repository.calculateNextMove(
+        config: state.config,
+        history: history,
+      );
+      return response.remainingWords.contains(guess);
+    } catch (_) {
+      return false;
+    }
   }
 
   // Optional: explicit methods for docs behaviour
