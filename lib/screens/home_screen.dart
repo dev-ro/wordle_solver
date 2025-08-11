@@ -70,6 +70,13 @@ class HomeScreen extends ConsumerWidget {
                   controller.resetCurrentRowFeedbackToBlack();
                   return;
                 }
+                // When a tile TextField is focused, let it handle letters/backspace/enter.
+                final primary = FocusManager.instance.primaryFocus;
+                final hasEditableTextFocus =
+                    primary?.context?.widget is EditableText;
+                if (hasEditableTextFocus) {
+                  return;
+                }
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.typeLetterAtSelection(keyLabel);
