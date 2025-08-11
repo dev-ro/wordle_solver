@@ -1,6 +1,6 @@
 # Wordle Solver (Flutter + Firebase)
 
-A fast, feedback‑driven Wordle assistant with a clean Flutter UI and a Python solver running on Firebase Cloud Functions.
+A fast, feedback‑driven Wordle assistant with a clean Flutter UI and a fully client‑side solver. Firebase is used for auth and hosting dictionaries in Storage.
 
 ## Play and test
 
