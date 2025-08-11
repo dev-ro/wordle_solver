@@ -684,7 +684,9 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               onLetterChanged: widget.onLetterChanged,
               maxWidth: widget.maxWidth,
               focusNodes: _nodes,
-              lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty,
+                // Unlock prefix tile when a filler was just applied
+                lockFirstTile: (uiState.config.prefix ?? '').isNotEmpty &&
+                    !uiState.unlockPrefixThisRow,
               selectedIndex: uiState.selectedIndex,
               onSelect: (i) {
                 ctrl.selectTile(i);
