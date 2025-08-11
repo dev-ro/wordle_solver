@@ -1,4 +1,46 @@
+---
+alwaysApply: false
+---
+
 # Terminal and CLI Command Rules (Git Bash on Windows)
+
+These rules standardize how commands are constructed and executed in this workspace. The environment is Git Bash on Windows.
+
+## 1. Environment Assumptions
+- Shell: Git Bash (MSYS2) on Windows
+- Working directory: project root unless explicitly changed
+- Use forward slashes in paths (e.g., `C:/Users/.../wordle_solver`)
+
+## 2. Command Construction
+- Commands must be single-line strings without hidden control sequences
+- Never include bracketed-paste control sequences like `[200~` or `[201~`
+- Do not embed stray newlines; chain with `&&` for multi-steps
+- If a command uses a pager, append `| cat` to force non-interactive output
+- Always pass non-interactive flags (e.g., `--yes`, `--force`) where relevant
+
+## 3. Git Commit Messages
+- Follow Conventional Commits
+- For multi-line messages, use multiple `-m` flags instead of `\n` escapes:
+  - Correct: `git commit -m "feat(x): Subject" -m "Body line" -m "Closes #123"`
+  - Avoid: `git commit -m "feat(x): Subject\n\nBody..."`
+- Keep subject under 72 characters; no trailing period
+
+## 4. GitHub CLI Multiline Bodies
+- Pipe content for multiline bodies instead of embedding `\n`:
+  - Correct: `printf "First line.\nSecond line." | gh pr comment 123 --body-file -`
+  - Avoid: `gh pr comment 123 --body "First line.\nSecond line."`
+
+## 5. Safety and Idempotence
+- Assume no interactive input is available; prefer flags that avoid prompts
+- Validate current working directory before destructive commands
+
+## 6. Examples (Git Bash)
+- Create a branch, commit, and push:
+  - `git checkout -b fix/prefix-deduction-and-borders-#15 && git add -A && git commit -m "fix(solver): Deduce prefix on first submission when first tile is green" -m "Closes #15" && git push origin fix/prefix-deduction-and-borders-#15`
+- Update an issue body from a file:
+  - `gh issue edit 15 --body-file docs/issues/15-prefix-deduction-and-tile-outline.md`
+
+Following these rules prevents bracketed-paste artifacts in Git Bash and ensures reliable non-interactive automation.# Terminal and CLI Command Rules (Git Bash on Windows)
 
 These rules standardize how commands are constructed and executed in this workspace. The environment is Git Bash on Windows.
 
