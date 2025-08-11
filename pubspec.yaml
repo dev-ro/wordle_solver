@@ -41,6 +41,7 @@ dependencies:
   firebase_storage: ^13.0.0
   flutter_riverpod: ^2.5.1
   characters: ^1.3.0
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +68,8 @@ flutter:
   # Assets for word dictionaries
   assets:
     - assets/words/
+    # Optional local avatar for developer footer
+    - assets/avatar/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
