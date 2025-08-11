@@ -107,11 +107,16 @@ List<String> filterPossibleWords(
     }
 
     bool isWordPossible(String word) {
+      // Build counts per unique letter from the candidate word, once per letter
       final wordLetterCounts = <String, int>{};
       for (final (letter, _) in guessFeedback) {
-        wordLetterCounts[letter] =
-            (wordLetterCounts[letter] ?? 0) +
-            RegExp(letter).allMatches(word).length;
+        if (!wordLetterCounts.containsKey(letter)) {
+          int count = 0;
+          for (int i = 0; i < word.length; i++) {
+            if (word[i] == letter) count++;
+          }
+          wordLetterCounts[letter] = count;
+        }
       }
       for (int i = 0; i < guessFeedback.length; i++) {
         final (letter, fb) = guessFeedback[i];
