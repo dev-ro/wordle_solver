@@ -632,11 +632,11 @@ class _GridSectionState extends State<_GridSection> {
                       final varPosCount =
                           state.lastResponse?.variablePositions.length ?? 99;
                       final canSuggest =
-                          (remainingCount < 10) &&
+                          (remainingCount <= 20) &&
                           (varPosCount >= 1 && varPosCount <= 2);
                       final tooltip = canSuggest
                           ? 'Auto-suggest filler words based on remaining candidates'
-                          : 'Enabled when remaining words < 10 and 1–2 variable positions remain';
+                          : 'Enabled when remaining words <= 20 and 1–2 variable positions remain';
                       return Tooltip(
                         message: tooltip,
                         child: ElevatedButton.icon(
