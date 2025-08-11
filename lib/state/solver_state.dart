@@ -464,7 +464,23 @@ class SolverController extends StateNotifier<SolverUiState> {
       final prev = findLastEditableNonEmptyIndex();
       if (prev != null) idx = prev;
     }
-    // Apply feedback without moving selection so typing continues to the next tile
+    // If setting green on an empty tile and a known green letter exists (prefix/history),
+    // auto-fill the letter and advance selection to the next editable index.
+    if (feedback == TileFeedback.green && currentRow[idx].letter.isEmpty) {
+      final known = _knownGreenLetterAt(idx);
+      if (known != null && known.isNotEmpty) {
+        _updateTile(idx, letter: known, feedback: TileFeedback.green);
+        final next =
+            findNextEditableIndex(idx) ??
+            ((idx + 1).clamp(0, currentRow.length - 1));
+        state = state.copyWith(
+          selectedIndex: next,
+          currentRowFeedbackTouched: true,
+        );
+        return;
+      }
+    }
+    // Otherwise, apply feedback without moving selection.
     _updateTile(idx, feedback: feedback);
     state = state.copyWith(currentRowFeedbackTouched: true);
   }

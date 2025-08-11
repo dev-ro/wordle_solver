@@ -476,6 +476,23 @@ class _GridSectionState extends State<_GridSection> {
                             onLetterChanged: (i, v) =>
                                 controller.overwriteLetterAtIndex(i, v),
                             maxWidth: c.maxWidth - 32, // inner padding margin
+                            onDigitShortcut: (d) {
+                              if (d == 1) {
+                                controller.setFeedbackAtSelection(
+                                  TileFeedback.green,
+                                );
+                              } else if (d == 2) {
+                                controller.setFeedbackAtSelection(
+                                  TileFeedback.yellow,
+                                );
+                              } else if (d == 3) {
+                                controller.setFeedbackAtSelection(
+                                  TileFeedback.black,
+                                );
+                              } else if (d == 0) {
+                                controller.resetCurrentRowFeedbackToBlack();
+                              }
+                            },
                           ),
                           if (r != state.grid.length - 1)
                             const SizedBox(height: 12),
@@ -774,12 +791,14 @@ class _FocusableFeedbackRow extends StatefulWidget {
   final void Function(int index) onToggleFeedback;
   final void Function(int index, String letter) onLetterChanged;
   final double maxWidth;
+  final void Function(int digit)? onDigitShortcut;
   const _FocusableFeedbackRow({
     super.key,
     required this.tiles,
     required this.onToggleFeedback,
     required this.onLetterChanged,
     required this.maxWidth,
+    this.onDigitShortcut,
   });
 
   @override
@@ -874,6 +893,7 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               onSubmit: () {
                 _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
               },
+              onDigitShortcut: widget.onDigitShortcut,
             ),
           ),
         );

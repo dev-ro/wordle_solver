@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../state/solver_state.dart';
 import 'feedback_tile.dart';
@@ -14,6 +15,7 @@ class FeedbackRow extends StatelessWidget {
   final void Function(int index) onSelect;
   final void Function(int index) onDoubleTap;
   final VoidCallback? onSubmit;
+  final void Function(int digit)? onDigitShortcut;
 
   const FeedbackRow({
     super.key,
@@ -27,6 +29,7 @@ class FeedbackRow extends StatelessWidget {
     required this.onSelect,
     required this.onDoubleTap,
     this.onSubmit,
+    this.onDigitShortcut,
   });
 
   @override
@@ -45,31 +48,63 @@ class FeedbackRow extends StatelessWidget {
 
     return SizedBox(
       width: maxWidth,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: gap,
-        runSpacing: 0,
-        children: [
-          for (int i = 0; i < tiles.length; i++)
-            FeedbackTile(
-              letter: tiles[i].letter,
-              feedback: tiles[i].feedback,
-              // Single tap cycles; long-press cycles; selection is updated via controller in onDoubleTap
-              onTap: () => onDoubleTap(i),
-              onLongPress: () => onToggleFeedback(i),
-              onLetterChanged: (v) => onLetterChanged(i, v),
-              side: clampedSide.toDouble(),
-              focusNode: focusNodes[i],
-              onMoveNext: i < tiles.length - 1
-                  ? () => focusNodes[i + 1].requestFocus()
-                  : null,
-              onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
-              isPrefixLocked: lockFirstTile && i == 0,
-              isSelected: selectedIndex == i,
-              onDoubleTap: () => onDoubleTap(i),
-              onSubmit: onSubmit,
-            ),
-        ],
+      child: Focus(
+        canRequestFocus: false,
+        onKeyEvent: (node, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
+          final key = event.logicalKey;
+          if (onDigitShortcut != null) {
+            if (key == LogicalKeyboardKey.digit1 ||
+                key == LogicalKeyboardKey.numpad1) {
+              onDigitShortcut!(1);
+              return KeyEventResult.handled;
+            }
+            if (key == LogicalKeyboardKey.digit2 ||
+                key == LogicalKeyboardKey.numpad2) {
+              onDigitShortcut!(2);
+              return KeyEventResult.handled;
+            }
+            if (key == LogicalKeyboardKey.digit3 ||
+                key == LogicalKeyboardKey.numpad3) {
+              onDigitShortcut!(3);
+              return KeyEventResult.handled;
+            }
+            if (key == LogicalKeyboardKey.digit0 ||
+                key == LogicalKeyboardKey.numpad0) {
+              onDigitShortcut!(0);
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: gap,
+          runSpacing: 0,
+          children: [
+            for (int i = 0; i < tiles.length; i++)
+              FeedbackTile(
+                letter: tiles[i].letter,
+                feedback: tiles[i].feedback,
+                // Single tap cycles; long-press cycles; selection is updated via controller in onDoubleTap
+                onTap: () => onDoubleTap(i),
+                onLongPress: () => onToggleFeedback(i),
+                onLetterChanged: (v) => onLetterChanged(i, v),
+                side: clampedSide.toDouble(),
+                focusNode: focusNodes[i],
+                onMoveNext: i < tiles.length - 1
+                    ? () => focusNodes[i + 1].requestFocus()
+                    : null,
+                onMovePrev: i > 0
+                    ? () => focusNodes[i - 1].requestFocus()
+                    : null,
+                isPrefixLocked: lockFirstTile && i == 0,
+                isSelected: selectedIndex == i,
+                onDoubleTap: () => onDoubleTap(i),
+                onSubmit: onSubmit,
+              ),
+          ],
+        ),
       ),
     );
   }
