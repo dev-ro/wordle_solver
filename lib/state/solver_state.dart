@@ -430,7 +430,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     bool usedCurrentRowAsGuess = false;
 
     // Build history ignoring an incomplete current row (allow recommendations anytime)
-    List<HistoryEntry> newHistory = _toHistory();
+    final preSubmitHistory = _toHistory();
+    List<HistoryEntry> newHistory = preSubmitHistory;
 
     final isRowComplete = !currentRow.any((t) => t.letter.isEmpty);
     if (isRowComplete) {
@@ -450,6 +451,16 @@ class SolverController extends StateNotifier<SolverUiState> {
         HistoryEntry(guess: guess, feedback: feedback),
       ];
       usedCurrentRowAsGuess = true;
+
+      // Deduce prefix only for the first submitted word: if first tile is green
+      // and no prefix is set yet, set it before calling the repository so it
+      // participates in filtering.
+      if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
+        final first = currentRow.first;
+        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
+          setPrefix(first.letter.toLowerCase());
+        }
+      }
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);

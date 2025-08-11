@@ -56,6 +56,11 @@ class FeedbackTile extends StatelessWidget {
     final controller = TextEditingController(text: letter.toUpperCase());
     // Only prefix should lock; green tiles should remain tappable to cycle colors
     final bool isLocked = isPrefixLocked;
+    final theme = Theme.of(context);
+    final Color selectedBorder = theme.colorScheme.primary;
+    final Color prefixBorder = theme.colorScheme.tertiary;
+    final double selectedBorderWidth = 2.0;
+    final double normalBorderWidth = 1.2;
     // Invisible input layered under a perfectly centered display text
     final inputField = Focus(
       focusNode: focusNode,
@@ -116,9 +121,9 @@ class FeedbackTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF89CFF0)
-                  : (isPrefixLocked ? const Color(0xFF89CFF0) : Colors.white24),
-              width: 1.5,
+                  ? selectedBorder
+                  : (isPrefixLocked ? prefixBorder : Colors.white24),
+              width: isSelected ? selectedBorderWidth : normalBorderWidth,
             ),
           ),
           alignment: Alignment.center,
