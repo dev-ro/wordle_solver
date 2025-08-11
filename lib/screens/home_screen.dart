@@ -40,26 +40,21 @@ class HomeScreen extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             const BokehBackground(),
-            RawKeyboardListener(
+            KeyboardListener(
               focusNode: gridKeyFocus,
               autofocus: true,
-              onKey: (event) {
-                if (event is! RawKeyDownEvent) return;
+              onKeyEvent: (event) {
+                if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
                 if (keyLabel.length == 1 &&
                     RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
                   controller.setLetterAtNextAvailable(keyLabel);
-                  return;
-                }
-                if (key == LogicalKeyboardKey.backspace) {
+                } else if (key == LogicalKeyboardKey.backspace) {
                   controller.backspaceAtPreviousEditable();
-                  return;
-                }
-                if (key == LogicalKeyboardKey.enter ||
+                } else if (key == LogicalKeyboardKey.enter ||
                     key == LogicalKeyboardKey.numpadEnter) {
                   _gridSubmitWithFeedbackCheck(context, state, controller);
-                  return;
                 }
               },
               child: Scaffold(
