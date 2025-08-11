@@ -186,6 +186,18 @@ class SolverController extends StateNotifier<SolverUiState> {
     return null;
   }
 
+  // Find the last non-empty tile in the current row, ignoring edit locks and colors.
+  int? _findLastNonEmptyIndexIgnoringLocks() {
+    if (state.grid.isEmpty) return null;
+    final currentRow = state.grid.last;
+    for (int i = currentRow.length - 1; i >= 0; i--) {
+      if (currentRow[i].letter.isNotEmpty) {
+        return i;
+      }
+    }
+    return null;
+  }
+
   // Find previous editable index to the left of startFromExclusive.
   int? findPrevEditableIndex(int startFromExclusive) {
     if (state.grid.isEmpty) return null;
@@ -502,9 +514,11 @@ class SolverController extends StateNotifier<SolverUiState> {
     int idx = state.selectedIndex ?? 0;
     final currentRow = state.grid.last;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
-    // If the selected tile has no letter, try to color the last non-empty editable tile
+    // If the selected tile has no letter, try to color the last non-empty tile.
+    // Prefer editable, but if none (e.g., it's green), fall back to any non-empty index.
     if (currentRow[idx].letter.isEmpty) {
-      final prev = findLastEditableNonEmptyIndex();
+      int? prev = findLastEditableNonEmptyIndex();
+      prev ??= _findLastNonEmptyIndexIgnoringLocks();
       if (prev != null) idx = prev;
     }
     // If still no letter to color, do nothing
