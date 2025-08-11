@@ -16,6 +16,7 @@ class FeedbackRow extends StatelessWidget {
   final VoidCallback? onSubmit;
   final ValueChanged<bool>? onTileFocusChange;
   final void Function(int index, int digit)? onDigitShortcut;
+  final VoidCallback? onBackspaceAtEmpty;
 
   const FeedbackRow({
     super.key,
@@ -31,6 +32,7 @@ class FeedbackRow extends StatelessWidget {
     this.onSubmit,
     this.onTileFocusChange,
     this.onDigitShortcut,
+    this.onBackspaceAtEmpty,
   });
 
   @override
@@ -76,6 +78,7 @@ class FeedbackRow extends StatelessWidget {
               onDigitShortcut: onDigitShortcut == null
                   ? null
                   : (d) => onDigitShortcut!(i, d),
+              onBackspaceAtEmpty: onBackspaceAtEmpty,
             ),
         ],
       ),

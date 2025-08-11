@@ -19,6 +19,7 @@ class FeedbackTile extends StatefulWidget {
   final VoidCallback? onSubmit;
   final ValueChanged<bool>? onFocusChange;
   final void Function(int digit)? onDigitShortcut;
+  final VoidCallback? onBackspaceAtEmpty;
 
   const FeedbackTile({
     super.key,
@@ -37,6 +38,7 @@ class FeedbackTile extends StatefulWidget {
     this.onSubmit,
     this.onFocusChange,
     this.onDigitShortcut,
+    this.onBackspaceAtEmpty,
   });
 
   @override
@@ -44,13 +46,36 @@ class FeedbackTile extends StatefulWidget {
 }
 
 class _FeedbackTileState extends State<FeedbackTile> {
+  static const String _sentinel = '\u200B';
+  late final TextEditingController _controller;
+  bool _isSettingText = false;
+
   void _notifyFocusChange() {
-    widget.onFocusChange?.call(widget.focusNode.hasFocus);
+    final hasFocus = widget.focusNode.hasFocus;
+    widget.onFocusChange?.call(hasFocus);
+    if (hasFocus) {
+      // Ensure caret is at the end so backspace deletes the last code unit.
+      // Also ensure sentinel exists for empty tiles so backspace yields onChanged.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (widget.letter.isEmpty && _controller.text != _sentinel) {
+          _isSettingText = true;
+          _controller.text = _sentinel;
+          _isSettingText = false;
+        }
+        _controller.selection = TextSelection.collapsed(
+          offset: _controller.text.length,
+        );
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
+    _controller = TextEditingController(
+      text: widget.letter.isEmpty ? _sentinel : widget.letter.toUpperCase(),
+    );
     widget.focusNode.addListener(_notifyFocusChange);
   }
 
@@ -61,11 +86,26 @@ class _FeedbackTileState extends State<FeedbackTile> {
       oldWidget.focusNode.removeListener(_notifyFocusChange);
       widget.focusNode.addListener(_notifyFocusChange);
     }
+    if (oldWidget.letter != widget.letter) {
+      // Keep controller in sync with external model while avoiding feedback loops.
+      final newText = widget.letter.isEmpty
+          ? _sentinel
+          : widget.letter.toUpperCase();
+      if (_controller.text != newText) {
+        _isSettingText = true;
+        _controller.text = newText;
+        _controller.selection = TextSelection.collapsed(
+          offset: _controller.text.length,
+        );
+        _isSettingText = false;
+      }
+    }
   }
 
   @override
   void dispose() {
     widget.focusNode.removeListener(_notifyFocusChange);
+    _controller.dispose();
     super.dispose();
   }
 
@@ -87,11 +127,7 @@ class _FeedbackTileState extends State<FeedbackTile> {
 
   @override
   Widget build(BuildContext context) {
-    const String sentinel =
-        '\u200B'; // zero-width space to detect backspace on empty
-    final controller = TextEditingController(
-      text: widget.letter.isEmpty ? sentinel : widget.letter.toUpperCase(),
-    );
+    // Controller is stateful to avoid recreating and to support focus-caret fixes.
     // Only prefix should lock; currently not used to block tap behavior
     final theme = Theme.of(context);
     final Color selectedBorder = theme.colorScheme.primary;
@@ -126,30 +162,40 @@ class _FeedbackTileState extends State<FeedbackTile> {
         fontWeight: FontWeight.bold,
         height: 1.0,
       ),
-      controller: controller,
+      controller: _controller,
       // Always editable via keyboard, even when prefix-locked; gestures may still be disabled
       readOnly: false,
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-3\u200B]')),
       ],
       onChanged: (v) {
+        if (_isSettingText) return; // ignore programmatic updates
         // Normalize by removing sentinel
-        String raw = v.replaceAll(sentinel, '');
+        String raw = v.replaceAll(_sentinel, '');
         if (raw.isEmpty) {
-          // Backspace on empty: clear this tile and move left
-          widget.onLetterChanged('');
+          // Backspace pressed
+          if (widget.letter.isEmpty) {
+            widget.onBackspaceAtEmpty?.call();
+          } else {
+            widget.onLetterChanged('');
+          }
           // Restore sentinel so further backspaces still trigger changes
-          controller.text = sentinel;
-          controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = true;
+          _controller.text = _sentinel;
+          _controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = false;
           widget.onMovePrev?.call();
           return;
         }
-        // If a digit 0-3 was entered, treat as color shortcut and clear input
-        if (raw.length == 1 && RegExp(r'^[0-3]$').hasMatch(raw)) {
-          final d = int.tryParse(raw);
+        // If a digit 0-3 was entered anywhere in the string, treat the last char as shortcut
+        final lastChar = raw.substring(raw.length - 1);
+        if (RegExp(r'^[0-3]$').hasMatch(lastChar)) {
+          final d = int.tryParse(lastChar);
           if (d != null) widget.onDigitShortcut?.call(d);
-          controller.text = sentinel;
-          controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = true;
+          _controller.text = _sentinel;
+          _controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = false;
           return;
         }
         // Take last alpha character
@@ -157,20 +203,22 @@ class _FeedbackTileState extends State<FeedbackTile> {
         if (RegExp(r'^[a-z]$').hasMatch(last)) {
           widget.onLetterChanged(last);
           // Reset field to sentinel so it stays effectively single-char visually
-          controller.text = sentinel;
-          controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = true;
+          _controller.text = _sentinel;
+          _controller.selection = const TextSelection.collapsed(offset: 1);
+          _isSettingText = false;
           widget.onMoveNext?.call();
         }
       },
       onEditingComplete: () {
         // Attempt to parse a single digit as a color shortcut (mobile soft keyboard case)
         // Only act if the current value is a digit and then clear it so it doesn't remain
-        final text = controller.text;
+        final text = _controller.text;
         if (text.length == 1 && RegExp(r'^[0-3]$').hasMatch(text)) {
           final d = int.tryParse(text);
           if (d != null) {
             widget.onDigitShortcut?.call(d);
-            controller.clear();
+            _controller.clear();
           }
         }
       },
@@ -231,24 +279,24 @@ class _FeedbackTileState extends State<FeedbackTile> {
               // Explicitly ask to show the soft keyboard on mobile
               await SystemChannels.textInput.invokeMethod('TextInput.show');
               // Move caret to end
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
+              _controller.selection = TextSelection.collapsed(
+                offset: _controller.text.length,
               );
               widget.onTap?.call();
             },
             onDoubleTap: () async {
               widget.focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
+              _controller.selection = TextSelection.collapsed(
+                offset: _controller.text.length,
               );
               widget.onDoubleTap?.call();
             },
             onLongPress: () async {
               widget.focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
-              controller.selection = TextSelection.collapsed(
-                offset: controller.text.length,
+              _controller.selection = TextSelection.collapsed(
+                offset: _controller.text.length,
               );
               // Long press is keyboard-only; no color cycling here
             },

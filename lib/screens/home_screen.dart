@@ -909,6 +909,11 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                     break;
                 }
               },
+              onBackspaceAtEmpty: () {
+                // When a tile is focused and empty, a backspace should delete the previous letter
+                // and move the selection left (controller handles both behaviors).
+                ctrl.backspaceAtSelection();
+              },
             ),
           ),
         );
