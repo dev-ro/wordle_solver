@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/solver_models.dart';
 import '../repositories/solver_repository.dart';
+import 'package:flutter/widgets.dart';
 
 enum TileFeedback { black, yellow, green }
 
@@ -524,3 +525,11 @@ final solverControllerProvider =
       final repo = ref.watch(solverRepositoryProvider);
       return SolverController(repository: repo);
     });
+
+// Shared FocusNode for global grid keyboard handling so other widgets can
+// restore focus after their own inputs are used.
+final gridKeyboardFocusNodeProvider = Provider<FocusNode>((ref) {
+  final node = FocusNode(skipTraversal: true);
+  ref.onDispose(node.dispose);
+  return node;
+});
