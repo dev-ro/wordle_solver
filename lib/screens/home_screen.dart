@@ -894,15 +894,19 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               },
               onDigitShortcut: (tileIndex, d) {
                 // Handle mobile digit shortcut from tile input
+                // Always apply color to the intended letter tile:
+                // use setFeedbackAtSelection so if the current selection advanced
+                // to an empty tile after typing, the controller will target the
+                // last non-empty tile automatically.
                 switch (d) {
                   case 1:
-                    ctrl.setTileFeedback(tileIndex, TileFeedback.green);
+                    ctrl.setFeedbackAtSelection(TileFeedback.green);
                     break;
                   case 2:
-                    ctrl.setTileFeedback(tileIndex, TileFeedback.yellow);
+                    ctrl.setFeedbackAtSelection(TileFeedback.yellow);
                     break;
                   case 3:
-                    ctrl.setTileFeedback(tileIndex, TileFeedback.black);
+                    ctrl.setFeedbackAtSelection(TileFeedback.black);
                     break;
                   case 0:
                     ctrl.resetCurrentRowFeedbackToBlack();

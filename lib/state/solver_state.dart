@@ -477,7 +477,13 @@ class SolverController extends StateNotifier<SolverUiState> {
 
   void setTileFeedback(int colIndex, TileFeedback feedback) {
     if (_isPrefixLockedIndex(colIndex)) return;
-    _updateTile(colIndex, feedback: feedback);
+    final row = state.grid.last;
+    final current = row[colIndex];
+    // Toggle: requesting the same color again reverts to black
+    final nextColor = (current.feedback == feedback)
+        ? TileFeedback.black
+        : feedback;
+    _updateTile(colIndex, feedback: nextColor);
     state = state.copyWith(
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
@@ -497,9 +503,16 @@ class SolverController extends StateNotifier<SolverUiState> {
       final prev = findLastEditableNonEmptyIndex();
       if (prev != null) idx = prev;
     }
+    // If still no letter to color, do nothing
+    if (currentRow[idx].letter.isEmpty) return;
     if (_isPrefixLockedIndex(idx)) return;
+    // Toggle: requesting the same color again reverts to black
+    final current = currentRow[idx];
+    final nextColor = (current.feedback == feedback)
+        ? TileFeedback.black
+        : feedback;
     // Apply feedback without moving selection so typing continues to the next tile
-    _updateTile(idx, feedback: feedback);
+    _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
   }
 
