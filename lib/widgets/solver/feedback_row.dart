@@ -13,6 +13,7 @@ class FeedbackRow extends StatelessWidget {
   final int? selectedIndex;
   final void Function(int index) onSelect;
   final void Function(int index) onDoubleTap;
+  final VoidCallback? onSubmit;
 
   const FeedbackRow({
     super.key,
@@ -25,6 +26,7 @@ class FeedbackRow extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelect,
     required this.onDoubleTap,
+    this.onSubmit,
   });
 
   @override
@@ -65,6 +67,7 @@ class FeedbackRow extends StatelessWidget {
               isPrefixLocked: lockFirstTile && i == 0,
               isSelected: selectedIndex == i,
               onDoubleTap: () => onDoubleTap(i),
+              onSubmit: onSubmit,
             ),
         ],
       ),

@@ -1,4 +1,4 @@
-// import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(solverControllerProvider);
     final controller = ref.read(solverControllerProvider.notifier);
+    final gridKeyFocus = ref.watch(gridKeyboardFocusNodeProvider);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -39,16 +40,34 @@ class HomeScreen extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             const BokehBackground(),
-            Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: const PreferredSize(
-                preferredSize: Size.fromHeight(kToolbarHeight + 18),
-                child: AuroraAppBar(title: 'WORDLE SOLVER'),
-              ),
-              body: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 900),
-                  child: body,
+            KeyboardListener(
+              focusNode: gridKeyFocus,
+              autofocus: true,
+              onKeyEvent: (event) {
+                if (event is! KeyDownEvent) return;
+                final key = event.logicalKey;
+                final keyLabel = key.keyLabel;
+                if (keyLabel.length == 1 &&
+                    RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
+                  controller.setLetterAtNextAvailable(keyLabel);
+                } else if (key == LogicalKeyboardKey.backspace) {
+                  controller.backspaceAtPreviousEditable();
+                } else if (key == LogicalKeyboardKey.enter ||
+                    key == LogicalKeyboardKey.numpadEnter) {
+                  _gridSubmitWithFeedbackCheck(context, state, controller);
+                }
+              },
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: const PreferredSize(
+                  preferredSize: Size.fromHeight(kToolbarHeight + 18),
+                  child: AuroraAppBar(title: 'WORDLE SOLVER'),
+                ),
+                body: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 900),
+                    child: body,
+                  ),
                 ),
               ),
             ),
@@ -121,6 +140,14 @@ class _TopControls extends ConsumerWidget {
                   onChanged: (v) => controller.setPrefix(
                     v.isEmpty ? null : v[0].toLowerCase(),
                   ),
+                  onEditingComplete: () {
+                    final node = ref.read(gridKeyboardFocusNodeProvider);
+                    FocusScope.of(context).requestFocus(node);
+                  },
+                  onSubmitted: (_) {
+                    final node = ref.read(gridKeyboardFocusNodeProvider);
+                    FocusScope.of(context).requestFocus(node);
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -169,6 +196,14 @@ class _TopControls extends ConsumerWidget {
                         onChanged: (v) =>
                             fillerCtrl.setQuery(v, config: state.config),
                         style: const TextStyle(color: Colors.white),
+                        onEditingComplete: () {
+                          final node = ref.read(gridKeyboardFocusNodeProvider);
+                          FocusScope.of(context).requestFocus(node);
+                        },
+                        onSubmitted: (_) {
+                          final node = ref.read(gridKeyboardFocusNodeProvider);
+                          FocusScope.of(context).requestFocus(node);
+                        },
                       );
                     },
                   ),
@@ -223,6 +258,9 @@ class _TopControls extends ConsumerWidget {
                             ),
                           );
                         }
+                        // Return keyboard handling to grid
+                        final node = ref.read(gridKeyboardFocusNodeProvider);
+                        FocusScope.of(context).requestFocus(node);
                       },
                     ),
                 ],
@@ -381,7 +419,11 @@ class _GridSection extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: state.isLoading
                         ? null
-                        : controller.requestRecommendations,
+                        : () => _gridSubmitWithFeedbackCheck(
+                            context,
+                            state,
+                            controller,
+                          ),
                     icon: state.isLoading
                         ? const SizedBox(
                             width: 16,
@@ -462,12 +504,7 @@ class _RecommendationsSection extends StatelessWidget {
       child: RecommendationsPanel(
         response: state.lastResponse,
         onSelectWord: (word) {
-          // Autofill current row with selected word
-          for (int i = 0; i < state.config.wordLength && i < word.length; i++) {
-            controller.setLetter(i, word[i]);
-          }
-
-          // Auto-copy to clipboard if enabled
+          controller.applyWordToCurrentRow(word);
           if (state.config.autoCopyOnSelect) {
             final textToCopy = '!${word.toLowerCase()}';
             Clipboard.setData(ClipboardData(text: textToCopy));
@@ -545,23 +582,23 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
   @override
   Widget build(BuildContext context) {
     // Allow typing anywhere to flow through focused tile; tap anywhere on row to focus first empty
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        final firstEmptyIndex = widget.tiles.indexWhere(
-          (t) => t.letter.isEmpty,
-        );
-        final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
-        _nodes[targetIndex].requestFocus();
-      },
-      child: FocusScope(
-        node: _rowScope,
-        autofocus: true,
-        child: Consumer(
-          builder: (context, ref, _) {
-            final uiState = ref.watch(solverControllerProvider);
-            final ctrl = ref.read(solverControllerProvider.notifier);
-            return FeedbackRow(
+    return Consumer(
+      builder: (context, ref, _) {
+        final uiState = ref.watch(solverControllerProvider);
+        final ctrl = ref.read(solverControllerProvider.notifier);
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            final firstEmptyIndex = widget.tiles.indexWhere(
+              (t) => t.letter.isEmpty,
+            );
+            final targetIndex = firstEmptyIndex == -1 ? 0 : firstEmptyIndex;
+            _nodes[targetIndex].requestFocus();
+          },
+          child: FocusScope(
+            node: _rowScope,
+            autofocus: true,
+            child: FeedbackRow(
               tiles: widget.tiles,
               onToggleFeedback: widget.onToggleFeedback,
               onLetterChanged: widget.onLetterChanged,
@@ -575,10 +612,88 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
               onDoubleTap: (i) {
                 ctrl.cycleFeedback(i);
               },
-            );
-          },
-        ),
-      ),
+              onSubmit: () {
+                _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+              },
+            ),
+          ),
+        );
+      },
     );
+  }
+}
+
+// Top-level helper so both the screen-level and row-level handlers can invoke the same
+// confirmation flow before submitting when all tiles are black.
+Future<void> _gridSubmitWithFeedbackCheck(
+  BuildContext context,
+  SolverUiState uiState,
+  SolverController ctrl,
+) async {
+  // Prevent concurrent submissions
+  if (uiState.isLoading) return;
+  final current = uiState.grid.isNotEmpty
+      ? uiState.grid.last
+      : const <SolverTile>[];
+  final allBlack =
+      current.isNotEmpty &&
+      current.every((t) => t.feedback == TileFeedback.black);
+  if (!allBlack) {
+    if (uiState.isLoading) return;
+    ctrl.requestRecommendations();
+    return;
+  }
+  final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+  bool proceed = false;
+  if (isIOS) {
+    proceed =
+        await showCupertinoDialog<bool>(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('All tiles are black'),
+            content: const Text(
+              'You have not set any feedback colors. Submit anyway?',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: false,
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Set colors'),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  } else {
+    proceed =
+        await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('All tiles are black'),
+            content: const Text(
+              'You have not set any feedback colors. Submit anyway?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Set colors'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+  if (proceed) {
+    if (uiState.isLoading) return;
+    ctrl.requestRecommendations();
   }
 }

@@ -126,23 +126,28 @@ class RecommendationsPanel extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: response!.remainingWords.take(50).map((w) {
-                    return MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF15151A).withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white24, width: 1),
-                        ),
-                        child: Text(
-                          w,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
+                    return InkWell(
+                      onTap: () => onSelectWord(w),
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF15151A,
+                            ).withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white24, width: 1),
+                          ),
+                          child: Text(
+                            w,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
