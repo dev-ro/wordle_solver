@@ -9,8 +9,8 @@ from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app, storage
 
-# For cost control and performance optimization
-set_global_options(max_instances=10, min_instances=1)
+# For cost control: remove min_instances to avoid always-on billing
+set_global_options(max_instances=10)
 
 # Initialize Firebase Admin SDK
 initialize_app()
