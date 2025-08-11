@@ -144,6 +144,14 @@ class SolverController extends StateNotifier<SolverUiState> {
     );
   }
 
+  // True when the given column is the prefix-locked tile for the current row
+  // and this row has not been explicitly unlocked (e.g., by filler application).
+  bool _isPrefixLockedIndex(int colIndex) {
+    return (state.config.prefix ?? '').isNotEmpty &&
+        colIndex == 0 &&
+        !state.unlockPrefixThisRow;
+  }
+
   // Returns true if the tile at the given index is editable in the current row.
   // A tile is not editable when it is green or when it is the first tile with a non-empty prefix lock.
   bool isTileEditable(int colIndex) {
@@ -454,6 +462,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void toggleFeedback(int colIndex) {
+    if (_isPrefixLockedIndex(colIndex)) return;
     final row = state.grid.last;
     final tile = row[colIndex];
     _updateTile(colIndex, feedback: nextFeedback(tile.feedback));
@@ -461,11 +470,13 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void cycleFeedback(int colIndex) {
+    if (_isPrefixLockedIndex(colIndex)) return;
     toggleFeedback(colIndex);
     state = state.copyWith(selectedIndex: colIndex);
   }
 
   void setTileFeedback(int colIndex, TileFeedback feedback) {
+    if (_isPrefixLockedIndex(colIndex)) return;
     _updateTile(colIndex, feedback: feedback);
     state = state.copyWith(
       selectedIndex: colIndex,
@@ -486,6 +497,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       final prev = findLastEditableNonEmptyIndex();
       if (prev != null) idx = prev;
     }
+    if (_isPrefixLockedIndex(idx)) return;
     // Apply feedback without moving selection so typing continues to the next tile
     _updateTile(idx, feedback: feedback);
     state = state.copyWith(currentRowFeedbackTouched: true);
@@ -497,6 +509,10 @@ class SolverController extends StateNotifier<SolverUiState> {
     final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
     final current = List<SolverTile>.from(rows.removeLast());
     for (int i = 0; i < current.length; i++) {
+      if (_isPrefixLockedIndex(i)) {
+        // Preserve locked prefix tile's feedback (typically green)
+        continue;
+      }
       current[i] = current[i].copyWith(feedback: TileFeedback.black);
     }
     rows.add(current);
