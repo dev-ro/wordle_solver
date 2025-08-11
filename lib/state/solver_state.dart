@@ -248,7 +248,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     final lastChar = value.substring(value.length - 1).toLowerCase();
     if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
     final currentRow = state.grid.last;
-    int idx = state.selectedIndex ?? 0;
+    // Always start typing flow at position 0 for simplicity
+    int idx = 0;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
     final existing = currentRow[idx];
     final known = _knownGreenLetterAt(idx);
@@ -327,7 +328,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     if (colIndex < 0 || colIndex >= state.grid.last.length) return;
     if (value.isEmpty) {
       _updateTile(colIndex, letter: '', feedback: TileFeedback.black);
-      state = state.copyWith(selectedIndex: colIndex);
+      // Keep selection aligned with this tile when cleared; if clearing index 0, stay at 0
+      state = state.copyWith(selectedIndex: colIndex > 0 ? colIndex - 1 : 0);
       return;
     }
     final lastChar = value.substring(value.length - 1).toLowerCase();
@@ -343,7 +345,9 @@ class SolverController extends StateNotifier<SolverUiState> {
       newFeedback = TileFeedback.black;
     }
     _updateTile(colIndex, letter: lastChar, feedback: newFeedback);
-    state = state.copyWith(selectedIndex: colIndex);
+    // Move selection to next tile after typing at an index
+    final next = (colIndex + 1).clamp(0, row.length - 1);
+    state = state.copyWith(selectedIndex: next);
   }
 
   // Fill the current row with the given word while respecting edit locks.

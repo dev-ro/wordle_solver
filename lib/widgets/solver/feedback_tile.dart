@@ -18,6 +18,7 @@ class FeedbackTile extends StatelessWidget {
   final VoidCallback? onDoubleTap;
   final VoidCallback? onSubmit;
   final ValueChanged<bool>? onFocusChange;
+  final void Function(int digit)? onDigitShortcut;
 
   const FeedbackTile({
     super.key,
@@ -35,6 +36,7 @@ class FeedbackTile extends StatelessWidget {
     this.onDoubleTap,
     this.onSubmit,
     this.onFocusChange,
+    this.onDigitShortcut,
   });
 
   Color _bgColor(BuildContext context) {
@@ -56,8 +58,7 @@ class FeedbackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController(text: letter.toUpperCase());
-    // Only prefix should lock; green tiles should remain tappable to cycle colors
-    final bool isLocked = isPrefixLocked;
+    // Only prefix should lock; currently not used to block tap behavior
     final theme = Theme.of(context);
     final Color selectedBorder = theme.colorScheme.primary;
     final Color prefixBorder = theme.colorScheme.tertiary;
@@ -103,6 +104,18 @@ class FeedbackTile extends StatelessWidget {
           // If user cleared this tile (backspace), move to previous tile to enable
           // subsequent backspace to clear the previous letter on mobile keyboards
           onMovePrev?.call();
+        }
+      },
+      onEditingComplete: () {
+        // Attempt to parse a single digit as a color shortcut (mobile soft keyboard case)
+        // Only act if the current value is a digit and then clear it so it doesn't remain
+        final text = controller.text;
+        if (text.length == 1 && RegExp(r'^[0-3]$').hasMatch(text)) {
+          final d = int.tryParse(text);
+          if (d != null) {
+            onDigitShortcut?.call(d);
+            controller.clear();
+          }
         }
       },
       onSubmitted: (_) => onSubmit?.call(),
@@ -159,23 +172,17 @@ class FeedbackTile extends StatelessWidget {
               focusNode.requestFocus();
               // Explicitly ask to show the soft keyboard on mobile
               await SystemChannels.textInput.invokeMethod('TextInput.show');
-              if (!isLocked) {
-                onTap?.call();
-              }
+              onTap?.call();
             },
             onDoubleTap: () async {
               focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
-              if (!isLocked) {
-                onDoubleTap?.call();
-              }
+              onDoubleTap?.call();
             },
             onLongPress: () async {
               focusNode.requestFocus();
               await SystemChannels.textInput.invokeMethod('TextInput.show');
-              if (!isLocked) {
-                onLongPress?.call();
-              }
+              // Long press is keyboard-only; no color cycling here
             },
           ),
         ),

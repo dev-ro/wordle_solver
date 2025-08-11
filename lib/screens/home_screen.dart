@@ -937,6 +937,23 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 onTileFocusChange: (hasFocus) {
                   ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
                 },
+                onDigitShortcut: (tileIndex, d) {
+                  // Handle mobile digit shortcut from tile input
+                  switch (d) {
+                    case 1:
+                      ctrl.setTileFeedback(tileIndex, TileFeedback.green);
+                      break;
+                    case 2:
+                      ctrl.setTileFeedback(tileIndex, TileFeedback.yellow);
+                      break;
+                    case 3:
+                      ctrl.setTileFeedback(tileIndex, TileFeedback.black);
+                      break;
+                    case 0:
+                      ctrl.resetCurrentRowFeedbackToBlack();
+                      break;
+                  }
+                },
               ),
             ),
           ),

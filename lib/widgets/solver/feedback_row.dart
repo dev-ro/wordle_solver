@@ -15,6 +15,7 @@ class FeedbackRow extends StatelessWidget {
   final void Function(int index) onDoubleTap;
   final VoidCallback? onSubmit;
   final ValueChanged<bool>? onTileFocusChange;
+  final void Function(int index, int digit)? onDigitShortcut;
 
   const FeedbackRow({
     super.key,
@@ -29,6 +30,7 @@ class FeedbackRow extends StatelessWidget {
     required this.onDoubleTap,
     this.onSubmit,
     this.onTileFocusChange,
+    this.onDigitShortcut,
   });
 
   @override
@@ -56,9 +58,9 @@ class FeedbackRow extends StatelessWidget {
             FeedbackTile(
               letter: tiles[i].letter,
               feedback: tiles[i].feedback,
-              // Single tap cycles; long-press cycles; selection is updated via controller in onDoubleTap
-              onTap: () => onDoubleTap(i),
-              onLongPress: () => onToggleFeedback(i),
+              // Single tap selects; double tap cycles colors; long-press focuses keyboard only
+              onTap: () => onSelect(i),
+              onLongPress: null,
               onLetterChanged: (v) => onLetterChanged(i, v),
               side: clampedSide.toDouble(),
               focusNode: focusNodes[i],
@@ -71,6 +73,9 @@ class FeedbackRow extends StatelessWidget {
               onDoubleTap: () => onDoubleTap(i),
               onSubmit: onSubmit,
               onFocusChange: onTileFocusChange,
+              onDigitShortcut: onDigitShortcut == null
+                  ? null
+                  : (d) => onDigitShortcut!(i, d),
             ),
         ],
       ),
