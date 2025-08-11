@@ -433,6 +433,18 @@ class SolverController extends StateNotifier<SolverUiState> {
     final preSubmitHistory = _toHistory();
     List<HistoryEntry> newHistory = preSubmitHistory;
 
+    // Simplified rule: on the first submission, if the first tile is green and
+    // a letter is present, that letter is the prefix. This applies even when the
+    // row is incomplete.
+    if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
+      if (currentRow.isNotEmpty) {
+        final first = currentRow.first;
+        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
+          setPrefix(first.letter.toLowerCase());
+        }
+      }
+    }
+
     final isRowComplete = !currentRow.any((t) => t.letter.isEmpty);
     if (isRowComplete) {
       final guess = currentRow.map((t) => t.letter).join();
@@ -452,15 +464,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       ];
       usedCurrentRowAsGuess = true;
 
-      // Deduce prefix only for the first submitted word: if first tile is green
-      // and no prefix is set yet, set it before calling the repository so it
-      // participates in filtering.
-      if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
-        final first = currentRow.first;
-        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
-          setPrefix(first.letter.toLowerCase());
-        }
-      }
+      // prefix deduction handled above for both incomplete and complete rows
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
