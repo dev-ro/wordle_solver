@@ -383,6 +383,28 @@ class _GridSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if ((state.lastResponse?.recommendations.length ?? 0) == 1)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ElevatedButton.icon(
+                        onPressed: state.isLoading
+                            ? null
+                            : () {
+                                final single =
+                                    state.lastResponse!.recommendations.first;
+                                // If current row incomplete, fill with word before confirming
+                                final isComplete = !state.grid.last.any(
+                                  (t) => t.letter.isEmpty,
+                                );
+                                if (!isComplete) {
+                                  controller.applyWordToCurrentRow(single.word);
+                                }
+                                controller.confirmWin(single.word);
+                              },
+                        icon: const Icon(Icons.check_circle),
+                        label: const Text('Confirm win'),
+                      ),
+                    ),
                   ElevatedButton.icon(
                     onPressed: state.isLoading ? null : controller.resetGame,
                     icon: const Icon(Icons.refresh),

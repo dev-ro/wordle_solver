@@ -377,16 +377,15 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void resetGame() {
-    // New game resets everything, including prefix
+    // New game resets everything, including prefix; enforce defaults from Issue #14
     final newConfig = SolverConfig(
-      wordLength: state.config.wordLength,
+      wordLength: 5,
       prefix: null,
       dictionary: state.config.dictionary,
       autoCopyOnSelect: state.config.autoCopyOnSelect,
     );
-    final length = newConfig.wordLength;
     final newRow = List.generate(
-      length,
+      5,
       (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
     );
     state = state.copyWith(
@@ -398,6 +397,35 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: 0,
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
+    );
+  }
+
+  // Mark the current row as a confirmed win: set all tiles to green.
+  // If a single recommendation word is provided and the current row is incomplete,
+  // fill the row with that word before setting greens.
+  void confirmWin([String? word]) {
+    if (state.grid.isEmpty) return;
+    final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
+    final currentRow = List<SolverTile>.from(rows.removeLast());
+
+    List<SolverTile> target = List<SolverTile>.from(currentRow);
+    // Optionally fill letters from provided word when length matches
+    if (word != null && word.length == target.length) {
+      for (int i = 0; i < target.length; i++) {
+        final ch = word[i].toLowerCase();
+        target[i] = target[i].copyWith(letter: ch);
+      }
+    }
+    // Set all feedback to green
+    for (int i = 0; i < target.length; i++) {
+      target[i] = target[i].copyWith(feedback: TileFeedback.green);
+    }
+
+    rows.add(target);
+    state = state.copyWith(
+      grid: rows,
+      selectedIndex: target.length - 1,
+      errorMessage: null,
     );
   }
 
