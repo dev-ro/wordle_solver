@@ -248,8 +248,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     final lastChar = value.substring(value.length - 1).toLowerCase();
     if (!RegExp(r'^[a-z]$').hasMatch(lastChar)) return;
     final currentRow = state.grid.last;
-    // Always start typing flow at position 0 for simplicity
-    int idx = 0;
+    // Respect the current selection index to support selection-based typing
+    int idx = state.selectedIndex ?? 0;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
     final existing = currentRow[idx];
     final known = _knownGreenLetterAt(idx);
