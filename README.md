@@ -1,178 +1,113 @@
-# Wordle Solver
+# Wordle Solver (Flutter + Firebase)
 
-A multi-language Wordle solver app built with Flutter that provides intelligent word recommendations and feedback-driven filtering to help you solve Wordle puzzles efficiently.
+Solve Wordle-style puzzles faster with intelligent, feedback-driven recommendations.
 
-## 🌟 Features
+Try it now: `https://wordle-solver-kyle.web.app/`
 
-- **Multi-Language Support**: English and Spanish dictionaries included
-- **Intelligent Recommendations**: Advanced scoring algorithm based on letter frequency analysis
-- **Dynamic Feedback System**: Tap-to-color interface for quick feedback input
-- **Adaptive Word Length**: Support for custom word lengths (not just 5-letter words)
-- **Prefix Support**: Find words with specific starting letters
-- **Filler Word Analysis**: Discover optimal words to uncover new letters
-- **Responsive Design**: Beautiful UI that adapts to any device
-- **Cross-Platform**: Runs on iOS, Android, Web, Windows, macOS, and Linux
+## What is this?
 
-## 🏗️ Architecture
+I paused work on ZenSort (my YouTube likes organizer) to turn my portfolio Wordle script into a user‑friendly, cross‑platform app powered by Firebase. The refactor is mostly complete; remaining work focuses on dictionary coverage and multi‑language expansion.
 
-This app follows a **Clean Architecture** pattern with a client-server model:
+## How to use (Web)
 
-### Frontend (Flutter)
-- **Clean Architecture** with Repository pattern
-- **Riverpod/BLoC** for state management
-- **Responsive UI** with adaptive components
-- **Dynamic grid** that adjusts to word length
-- **Tap-to-color feedback** system
+1. Open the app: `https://wordle-solver-kyle.web.app/`
+2. Choose word length (default 5). Optionally set a prefix.
+3. Type a guess or tap a recommendation to auto‑fill.
+4. Tap tiles to cycle feedback: Gray → Yellow → Green.
+5. Submit to get the next set of optimal recommendations and remaining‑words count.
+6. Repeat until solved.
 
-### Backend (Planned - Firebase)
-- **Python Cloud Functions** for solver engine
-- **Firestore** for user feedback and data
-- **Cloud Storage** for dictionary management
-- **Firebase Authentication** (anonymous by default)
+Tips:
+- Prefix letters are treated as locked greens (when set).
+- Recommendations favor distinct, high‑information letters early; later guesses allow duplicates when helpful.
 
-## 📱 UI/UX Design
+## Live features
 
-- **Dynamic Input Grid**: Automatically adjusts to specified word length
-- **Tap-to-Color Feedback**: Quick feedback input (Gray → Yellow → Green)
-- **Smart Recommendations**: Top-ranked word suggestions with scores
-- **Remaining Words Display**: Shows possible solutions as they narrow down
-- **Filler Word Suggestions**: Helps discover new letters efficiently
-- **Clean, Modern Interface**: Intuitive design following platform conventions
+- Multi‑language baseline: English and Spanish
+- Variable word length and optional prefix
+- Tap‑to‑color feedback grid and responsive layout
+- Ranked recommendations and filler‑word analysis
 
-## 🎯 How It Works
+## Where to play/test
 
-### Core Algorithm
+- Live app: [wordle-solver-kyle.web.app](https://wordle-solver-kyle.web.app/)
+- Twitch Wordle (optimized target): [twitch.tv/twordletv](https://www.twitch.tv/twordletv)
+- Official Wordle (NYT): https://www.nytimes.com/games/wordle
 
-1. **Letter Frequency Analysis**: Calculates frequency of letters in the dictionary
-2. **Word Scoring**: Ranks words based on common letters and strategic value
-3. **Feedback Processing**: Filters possible words using Wordle's rules:
-   - **Green (G)**: Letter is correct and in the right position
-   - **Yellow (Y)**: Letter is in the word but wrong position
-   - **Black/Gray (B)**: Letter is not in the word (or appears too many times)
+## Limitations and roadmap (dictionaries)
 
-### Smart Features
+The solver is only as good as its dictionaries. If a word is missing, it will not be suggested.
 
-- **Variable Letter Detection**: Identifies positions where letters vary across remaining words
-- **Filler Word Optimization**: Suggests words to maximize new letter discovery
-- **Progressive Filtering**: Narrows down possibilities with each guess
-- **Duplicate Letter Handling**: Accounts for words with repeated letters
+Current dictionaries:
+- `assets/words/english.json`
+- `assets/words/spanish.json`
 
-## 📚 Dictionaries
+Planned improvements:
+- Community‑supported dictionary contributions (additions/removals with review)
+- Automated CI to validate and publish dictionary updates
+- Additional languages (research ongoing) and better handling of proper nouns/variants
 
-The app includes comprehensive word dictionaries:
+How you can help today:
+- Open an issue tagged “dictionary” with missing words, sources, or language packs
+- Or submit a PR updating the JSON lists (keep all lowercase, one word per entry)
 
-- **English**: `assets/words/english.json` - Extensive English word list
-- **Spanish**: `assets/words/spanish.json` - Comprehensive Spanish dictionary
+## Project status and tracking
 
-Dictionaries are stored as JSON arrays for fast loading and processing.
+- Active development; core refactor largely done
+- Focus: dictionary quality and language expansion
+- See repository Issues and Pull Requests for all open/closed work items
 
-## 🚀 Getting Started
+## Architecture overview
 
-### Prerequisites
+- Flutter front end with clean, responsive UI (Riverpod state, repository pattern)
+- Python Cloud Functions backend with in‑memory cached dictionaries
+- Firebase Hosting, Firestore (feedback), and Cloud Storage (dictionaries)
 
-- Flutter SDK (3.8.1 or higher)
-- Dart SDK
-- Your favorite IDE (VS Code, Android Studio, etc.)
+Further reading: `docs/references/Optimized Architectural Plan.md`
 
-### Installation
+## Local development
 
-1. **Clone the repository**
+Prerequisites: Flutter SDK and Dart.
+
+1. Clone and install
    ```bash
-   git clone https://github.com/dev-ro/wordle_solver.git
+   git clone <this-repo-url>
    cd wordle_solver
-   ```
-
-2. **Install dependencies**
-   ```bash
    flutter pub get
    ```
-
-3. **Run the app**
+2. Run
    ```bash
    flutter run
    ```
 
-### Usage
+Scripts for CI/CD and operations live in `scripts/` (e.g., `analyze.sh`, `format.sh`, `deploy.sh`, `upload-dictionaries.sh`).
 
-1. **Start a new game** - The app will show recommended starting words
-2. **Enter your guess** - Type a word or select from recommendations
-3. **Provide feedback** - Tap tiles to cycle through colors (Gray → Yellow → Green)
-4. **Get next suggestions** - The app filters possibilities and suggests optimal next moves
-5. **Repeat until solved** - Continue until you find the target word
+## Repository tour
 
-## 🔧 Configuration
+- `lib/` Flutter app (UI, state, services)
+- `functions/` Python solver API and tests
+- `assets/words/` Dictionaries (JSON)
+- `scripts/` DevOps helpers
+- `docs/` Updates, references, and issue notes
 
-### Custom Word Length
-The app supports variable word lengths for different Wordle variants.
+## Contributing
 
-### Prefix Support
-Perfect for games like Twitch Wordle where words must start with specific letters.
+Contributions are welcome—especially for dictionary coverage and new languages. Please keep PRs focused and reference the related issue.
 
-### Dictionary Selection
-Easy switching between English and Spanish dictionaries.
+Before committing Dart changes, run:
+```bash
+flutter analyze --fatal-infos
+dart format .
+```
 
-## 🎮 Game Modes
+## License
 
-- **Standard Wordle**: 5-letter words, no prefix
-- **Custom Length**: Any word length (3-8+ letters)
-- **Prefix Mode**: Words starting with specific letters
-- **Multi-Language**: English and Spanish support
+MIT. See `LICENSE`.
 
-## 📊 Algorithm Details
+## Acknowledgments
 
-### Scoring System
+- Inspired by Wordle by Josh Wardle
+- Built with Flutter and Firebase
+- Thanks to community word‑list projects for seed dictionaries
 
-Words are scored based on:
-- **Letter frequency** in the target dictionary
-- **Unique letter count** (for early guesses)
-- **Position-specific analysis**
-- **Strategic value** for information gathering
-
-### Optimization Features
-
-- **Progressive difficulty**: Different strategies for early vs. late game
-- **Duplicate handling**: Smart processing of repeated letters
-- **Contextual recommendations**: Adapts to remaining word pool
-
-## 🔮 Future Features
-
-- **Cloud-based solving**: Server-side processing for complex analysis
-- **User feedback system**: Community-driven dictionary improvements
-- **Statistics tracking**: Personal solving statistics and trends
-- **Social features**: Share results and compete with friends
-- **Advanced analytics**: Deep insights into solving patterns
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by the original Wordle game by Josh Wardle
-- Built with Flutter and the amazing Dart ecosystem
-- Dictionary data sourced from open-source word lists
-- Special thanks to the Flutter community for excellent packages and resources
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/dev-ro/wordle_solver/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/dev-ro/wordle_solver/discussions)
-- **Repository**: [GitHub Repository](https://github.com/dev-ro/wordle_solver)
-
----
-
-**Happy Wordling!** 🎉
-
-*Built with ❤️ using Flutter*
+— Happy Wordling!
