@@ -1,104 +1,131 @@
 # Wordle Solver (Flutter + Firebase)
 
-Solve Wordle-style puzzles faster with intelligent, feedback-driven recommendations.
+A fast, feedback‑driven Wordle assistant with a clean Flutter UI and a Python solver running on Firebase Cloud Functions.
 
-Try it now: `https://wordle-solver-kyle.web.app/`
+## Play and test
 
-## What is this?
+- Live app: [wordle-solver-kyle.web.app](https://wordle-solver-kyle.web.app/)
+- Twitch Wordle (primary target the UI is optimized for): [twitch.tv/twordletv](https://www.twitch.tv/twordletv)
+- Official Wordle (NYT): https://www.nytimes.com/games/wordle
 
-I paused work on ZenSort (my YouTube likes organizer) to turn my portfolio Wordle script into a user‑friendly, cross‑platform app powered by Firebase. The refactor is mostly complete; remaining work focuses on dictionary coverage and multi‑language expansion.
+## Overview
+
+I paused development on ZenSort (my YouTube likes organizer) to productize my Wordle solver script into a public, user‑friendly app. The refactor is largely complete and deployed; current efforts focus on dictionary coverage and multi‑language support.
+
+## Features
+
+- Variable word length (3–20) with responsive single‑row fit
+- Prefix deduction: first green on first submission auto‑locks the prefix; quick Clear control available (see [PR #27](https://github.com/dev-ro/wordle_solver/pull/27))
+- Tap‑to‑color tiles: cycle Gray → Yellow → Green; greens carry forward to the next row (see [PR #9](https://github.com/dev-ro/wordle_solver/pull/9))
+- Keyboard support: type letters, Enter to submit, Backspace navigation; selection management across tiles (see [PR #26](https://github.com/dev-ro/wordle_solver/pull/26), closes [#13](https://github.com/dev-ro/wordle_solver/issues/13))
+- Ranked recommendations strictly from remaining candidates; scores computed from full dictionary for stability (see [PR #4](https://github.com/dev-ro/wordle_solver/pull/4))
+- Remaining words preview and count
+- Filler words
+  - Manual search: type letters like "bhptw" to find words covering them
+  - Auto‑suggest: derives letters from variable positions in remaining candidates (see [PR #25](https://github.com/dev-ro/wordle_solver/pull/25))
+- Auto‑copy toggle: tapping a recommendation can autofill and copy `!word` for Twitch chat (see [Issue #7](https://github.com/dev-ro/wordle_solver/issues/7), [PR #9](https://github.com/dev-ro/wordle_solver/pull/9))
 
 ## How to use (Web)
 
 1. Open the app: `https://wordle-solver-kyle.web.app/`
-2. Choose word length (default 5). Optionally set a prefix.
-3. Type a guess or tap a recommendation to auto‑fill.
+2. Set word length (default 5). Prefix is deduced automatically the first time you submit with a green first tile.
+3. Type a guess or tap a recommendation to auto‑fill. Optional: enable Auto‑copy for Twitch.
 4. Tap tiles to cycle feedback: Gray → Yellow → Green.
-5. Submit to get the next set of optimal recommendations and remaining‑words count.
-6. Repeat until solved.
+5. Submit to get updated recommendations and remaining‑words count.
+6. Repeat until solved. Use Confirm Win/New Game when done (see [PR #28](https://github.com/dev-ro/wordle_solver/pull/28)).
 
-Tips:
-- Prefix letters are treated as locked greens (when set).
-- Recommendations favor distinct, high‑information letters early; later guesses allow duplicates when helpful.
+## Dictionaries: limitations and roadmap
 
-## Live features
-
-- Multi‑language baseline: English and Spanish
-- Variable word length and optional prefix
-- Tap‑to‑color feedback grid and responsive layout
-- Ranked recommendations and filler‑word analysis
-
-## Where to play/test
-
-- Live app: [wordle-solver-kyle.web.app](https://wordle-solver-kyle.web.app/)
-- Twitch Wordle (optimized target): [twitch.tv/twordletv](https://www.twitch.tv/twordletv)
-- Official Wordle (NYT): https://www.nytimes.com/games/wordle
-
-## Limitations and roadmap (dictionaries)
-
-The solver is only as good as its dictionaries. If a word is missing, it will not be suggested.
+The solver is only as good as its dictionaries. Missing words won’t be suggested.
 
 Current dictionaries:
 - `assets/words/english.json`
 - `assets/words/spanish.json`
 
 Planned improvements:
-- Community‑supported dictionary contributions (additions/removals with review)
-- Automated CI to validate and publish dictionary updates
-- Additional languages (research ongoing) and better handling of proper nouns/variants
+- Community dictionary workflow and Firebase Storage pipeline (see open [#16](https://github.com/dev-ro/wordle_solver/issues/16))
+- Expanded coverage and additional languages (see open [#17](https://github.com/dev-ro/wordle_solver/issues/17))
+- In‑app “missing word” feedback UX
 
-How you can help today:
-- Open an issue tagged “dictionary” with missing words, sources, or language packs
-- Or submit a PR updating the JSON lists (keep all lowercase, one word per entry)
+Contribute now:
+- Open an issue tagged “dictionary” with missing words or sources
+- Submit a PR updating the JSON lists (lowercase, one word per entry)
 
-## Project status and tracking
+## Architecture
 
-- Active development; core refactor largely done
-- Focus: dictionary quality and language expansion
-- See repository Issues and Pull Requests for all open/closed work items
+Frontend (Flutter):
+- Riverpod state (`lib/state/solver_state.dart`, `lib/state/filler_state.dart`)
+- UI in `lib/screens/home_screen.dart` with responsive layout and keyboard handling
+- Components: `lib/widgets/solver/feedback_row.dart`, `feedback_tile.dart`, `recommendations_panel.dart`, `filler_results.dart`
+- Local dictionary loading for filler features (`lib/services/filler_words_service.dart`)
 
-## Architecture overview
+Backend (Firebase Python Functions):
+- Callable function `calculate_next_move` in `functions/main.py`
+- Reads dictionaries from Cloud Storage with in‑memory cache (warm starts are fast)
+- Returns recommendations, remaining words/count, variable positions, filler suggestions
 
-- Flutter front end with clean, responsive UI (Riverpod state, repository pattern)
-- Python Cloud Functions backend with in‑memory cached dictionaries
-- Firebase Hosting, Firestore (feedback), and Cloud Storage (dictionaries)
+CI/CD & Security:
+- Workflows in `.github/workflows/ci.yml` for Flutter/Python, coverage, and security scans (pip‑audit, OSV‑Scanner, TruffleHog)
+- Bash scripts: `scripts/analyze.sh`, `scripts/format.sh`, `scripts/deploy.sh`, `scripts/upload-dictionaries.sh`
 
-Further reading: `docs/references/Optimized Architectural Plan.md`
+Further reading:
+- `docs/updates/009-firebase-ci-cd-setup.md`
+- `docs/updates/010-solver-ui-and-ci-hardening.md`
+- `docs/references/Optimized Architectural Plan.md`
+- Issue notes: `docs/issues/15-prefix-deduction-and-tile-outline.md`, `docs/issues/ui-length-layout-and-recommendations-styling.md` (addressed by [PR #23](https://github.com/dev-ro/wordle_solver/pull/23))
+
+## Project status and history
+
+Highlights (recent merged PRs):
+- [PR #33](https://github.com/dev-ro/wordle_solver/pull/33) keyboard overwrite of green/prefix tiles (fixes [#31](https://github.com/dev-ro/wordle_solver/issues/31))
+- [PR #32](https://github.com/dev-ro/wordle_solver/pull/32) unlock prefix on filler; auto‑fill greens (fixes [#30](https://github.com/dev-ro/wordle_solver/issues/30))
+- [PR #27](https://github.com/dev-ro/wordle_solver/pull/27) prefix deduction + borders (see [#15](https://github.com/dev-ro/wordle_solver/issues/15))
+- [PR #25](https://github.com/dev-ro/wordle_solver/pull/25) advanced filler words
+- [PR #23](https://github.com/dev-ro/wordle_solver/pull/23) length reset, long‑word layout, color cycling, 3×3 styled recommendations (addresses [#22](https://github.com/dev-ro/wordle_solver/issues/22))
+- [PR #9](https://github.com/dev-ro/wordle_solver/pull/9) UI refresh: auto‑copy, submit flow, green‑lock behavior
+- [PR #4](https://github.com/dev-ro/wordle_solver/pull/4) solver UI and alignment
+
+Open focus areas:
+- [#17](https://github.com/dev-ro/wordle_solver/issues/17) Research and Implement an Expanded Dictionary
+- [#16](https://github.com/dev-ro/wordle_solver/issues/16) Community Dictionary Updates via Firebase Storage
+
+Repo:
+- `dev-ro/wordle_solver` — https://github.com/dev-ro/wordle_solver
 
 ## Local development
 
-Prerequisites: Flutter SDK and Dart.
+Prerequisites: Flutter 3.32.x and Dart ^3.8.x.
 
-1. Clone and install
-   ```bash
-   git clone <this-repo-url>
-   cd wordle_solver
-   flutter pub get
-   ```
-2. Run
-   ```bash
-   flutter run
-   ```
+1) Install
+```bash
+git clone https://github.com/dev-ro/wordle_solver.git
+cd wordle_solver
+flutter pub get
+```
 
-Scripts for CI/CD and operations live in `scripts/` (e.g., `analyze.sh`, `format.sh`, `deploy.sh`, `upload-dictionaries.sh`).
+2) Run
+```bash
+flutter run
+```
 
-## Repository tour
-
-- `lib/` Flutter app (UI, state, services)
-- `functions/` Python solver API and tests
-- `assets/words/` Dictionaries (JSON)
-- `scripts/` DevOps helpers
-- `docs/` Updates, references, and issue notes
+3) Scripts
+```bash
+./scripts/analyze.sh
+./scripts/format.sh
+./scripts/deploy.sh
+./scripts/upload-dictionaries.sh
+```
 
 ## Contributing
 
-Contributions are welcome—especially for dictionary coverage and new languages. Please keep PRs focused and reference the related issue.
-
-Before committing Dart changes, run:
+- Issues‑first; one logical change per PR using Conventional Commits
+- Before committing Dart changes, run:
 ```bash
 flutter analyze --fatal-infos
 dart format .
 ```
+
+Dictionary PR tips: lowercase entries, one per JSON element; include a short source/rationale.
 
 ## License
 
@@ -106,8 +133,6 @@ MIT. See `LICENSE`.
 
 ## Acknowledgments
 
-- Inspired by Wordle by Josh Wardle
-- Built with Flutter and Firebase
-- Thanks to community word‑list projects for seed dictionaries
+Inspired by Wordle (Josh Wardle). Built with Flutter and Firebase. Thanks to open‑source word lists for seeds.
 
 — Happy Wordling!
