@@ -1,25 +1,49 @@
-import 'package:cloud_functions/cloud_functions.dart';
-
+import 'package:flutter/foundation.dart';
 import '../models/solver_models.dart';
+import '../services/dictionary_service.dart';
+import '../solver/solver_engine.dart' as engine;
 
 class SolverRepository {
-  final FirebaseFunctions _functions;
+  final DictionaryService _dictionaryService;
 
-  SolverRepository({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instance;
+  SolverRepository({DictionaryService? dictionaryService})
+    : _dictionaryService = dictionaryService ?? DictionaryService();
 
   Future<SolverResponse> calculateNextMove({
     required SolverConfig config,
     required List<HistoryEntry> history,
   }) async {
-    final callable = _functions.httpsCallable('calculate_next_move');
-    final payload = {
-      'config': config.toMap(),
-      'history': history.map((h) => h.toMap()).toList(),
+    final dictionary = await _dictionaryService.loadDictionary(
+      config.dictionary,
+    );
+
+    // Prepare payload for background compute
+    final payload = <String, dynamic>{
+      'dictionary': dictionary,
+      'wordLength': config.wordLength,
+      'prefix': config.prefix,
+      'history': [
+        for (final h in history) {'guess': h.guess, 'feedback': h.feedback},
+      ],
     };
 
-    final HttpsCallableResult response = await callable.call(payload);
-    final data = (response.data as Map).cast<String, dynamic>();
-    return SolverResponse.fromMap(data);
+    final result = await compute(_computeInBackground, payload);
+    return SolverResponse.fromMap(result.cast<String, dynamic>());
   }
+}
+
+Map<String, dynamic> _computeInBackground(Map<String, dynamic> payload) {
+  final dictionary = (payload['dictionary'] as List).cast<String>();
+  final wordLength = payload['wordLength'] as int;
+  final prefix = payload['prefix'] as String?;
+  final history = (payload['history'] as List)
+      .map((e) => (e as Map).cast<String, String>())
+      .toList(growable: false);
+
+  return engine.computeNextMove(
+    dictionary: dictionary,
+    wordLength: wordLength,
+    prefix: prefix,
+    history: history,
+  );
 }
