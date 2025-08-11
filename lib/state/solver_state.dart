@@ -380,11 +380,33 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = List<SolverTile>.from(rows.removeLast());
     int? lastSetIndex;
     for (int i = 0; i < currentRow.length && i < word.length; i++) {
-      if (!isTileEditable(i)) continue;
       final ch = word[i].toLowerCase();
       if (!RegExp(r'^[a-z]$').hasMatch(ch)) continue;
+      // Always enforce prefix at index 0, even if tile is locked
+      if (i == 0) {
+        final p = state.config.prefix;
+        if (p != null && p.isNotEmpty) {
+          currentRow[0] = currentRow[0].copyWith(
+            letter: p[0].toLowerCase(),
+            feedback: TileFeedback.green,
+          );
+          lastSetIndex = 0;
+          continue;
+        }
+      }
+      if (!isTileEditable(i)) continue;
       currentRow[i] = currentRow[i].copyWith(letter: ch);
       lastSetIndex = i;
+    }
+    // If prefix exists but selected word was shorter/other conditions skipped index 0,
+    // still ensure prefix letter and green is reflected on current row.
+    final p = state.config.prefix;
+    if (p != null && p.isNotEmpty && currentRow.isNotEmpty) {
+      currentRow[0] = currentRow[0].copyWith(
+        letter: p[0].toLowerCase(),
+        feedback: TileFeedback.green,
+      );
+      lastSetIndex ??= 0;
     }
     rows.add(currentRow);
     state = state.copyWith(
@@ -734,7 +756,6 @@ class SolverController extends StateNotifier<SolverUiState> {
 
   Future<void> requestRecommendations() async {
     final currentRow = state.grid.last;
-    final prefix = state.config.prefix;
     bool usedCurrentRowAsGuess = false;
 
     // Build history ignoring an incomplete current row (allow recommendations anytime)
@@ -816,6 +837,7 @@ class SolverController extends StateNotifier<SolverUiState> {
           }
         }
         // Auto-populate prefix on the new row if present
+        final prefix = state.config.prefix;
         if (prefix != null && prefix.isNotEmpty) {
           newRow[0] = newRow[0].copyWith(
             letter: prefix[0].toLowerCase(),
