@@ -48,9 +48,9 @@ Available targets:
 ```
 
 ### `./scripts/format.sh`
-**Format Dart code (CI-consistent)**
+**Format and analyze Dart code (CI-consistent)**
 
-Runs `dart format --set-exit-if-changed .` to ensure consistent formatting locally and in CI.
+Runs `dart format --set-exit-if-changed .` and `flutter analyze --fatal-infos` to ensure consistent formatting and analyzer cleanliness locally and in CI.
 
 ```bash
 ./scripts/format.sh
