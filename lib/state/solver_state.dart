@@ -299,7 +299,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     // If current tile is empty, delete the nearest previous editable non-empty tile.
     if (currentRow[idx].letter.isEmpty) {
       for (int i = idx - 1; i >= 0; i--) {
-        if (isTileEditable(i) && currentRow[i].letter.isNotEmpty) {
+        // Ignore edit locks here to allow backspacing over locked greens/prefix
+        if (currentRow[i].letter.isNotEmpty) {
           _updateTile(i, letter: '');
           state = state.copyWith(selectedIndex: i);
           return;

@@ -42,6 +42,9 @@ class HomeScreen extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             const BokehBackground(),
+            // Global keyboard listener (desktop/web) remains enabled, but mobile soft keyboards
+            // won't deliver RawKeyEvents. Row-level Focus handler (below) also handles keys so
+            // typing works when a tile TextField holds focus.
             KeyboardListener(
               focusNode: gridKeyFocus,
               autofocus: true,

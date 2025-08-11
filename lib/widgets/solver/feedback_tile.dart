@@ -77,6 +77,7 @@ class FeedbackTile extends StatelessWidget {
         return KeyEventResult.ignored;
       },
       child: TextField(
+        focusNode: focusNode,
         showCursor: false,
         cursorColor: Colors.transparent,
         enableInteractiveSelection: false,
@@ -111,9 +112,14 @@ class FeedbackTile extends StatelessWidget {
           FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
         ],
         onChanged: (v) {
-          onLetterChanged(v.toLowerCase());
-          if (v.isNotEmpty) {
+          final lower = v.toLowerCase();
+          onLetterChanged(lower);
+          if (lower.isNotEmpty) {
             onMoveNext?.call();
+          } else {
+            // If user cleared this tile (backspace), move to previous tile to enable
+            // subsequent backspace to clear the previous letter on mobile keyboards
+            onMovePrev?.call();
           }
         },
         onSubmitted: (_) => onSubmit?.call(),
