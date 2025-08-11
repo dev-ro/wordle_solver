@@ -866,29 +866,75 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
           child: FocusScope(
             node: _rowScope,
             autofocus: true,
-            child: FeedbackRow(
-              tiles: widget.tiles,
-              onToggleFeedback: widget.onToggleFeedback,
-              onLetterChanged: widget.onLetterChanged,
-              maxWidth: widget.maxWidth,
-              focusNodes: _nodes,
-              // Unlock prefix tile when a filler was just applied
-              lockFirstTile:
-                  (uiState.config.prefix ?? '').isNotEmpty &&
-                  !uiState.unlockPrefixThisRow,
-              selectedIndex: uiState.selectedIndex,
-              onSelect: (i) {
-                ctrl.selectTile(i);
+            child: Focus(
+              onKeyEvent: (node, event) {
+                if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                final key = event.logicalKey;
+                final keyLabel = key.keyLabel;
+                // Numeric shortcuts for feedback colors and reset
+                if (key == LogicalKeyboardKey.digit1 ||
+                    key == LogicalKeyboardKey.numpad1) {
+                  ctrl.setFeedbackAtSelection(TileFeedback.green);
+                  return KeyEventResult.handled;
+                }
+                if (key == LogicalKeyboardKey.digit2 ||
+                    key == LogicalKeyboardKey.numpad2) {
+                  ctrl.setFeedbackAtSelection(TileFeedback.yellow);
+                  return KeyEventResult.handled;
+                }
+                if (key == LogicalKeyboardKey.digit3 ||
+                    key == LogicalKeyboardKey.numpad3) {
+                  ctrl.setFeedbackAtSelection(TileFeedback.black);
+                  return KeyEventResult.handled;
+                }
+                if (key == LogicalKeyboardKey.digit0 ||
+                    key == LogicalKeyboardKey.numpad0) {
+                  ctrl.resetCurrentRowFeedbackToBlack();
+                  return KeyEventResult.handled;
+                }
+                // Letters
+                if (keyLabel.length == 1 &&
+                    RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
+                  ctrl.typeLetterAtSelection(keyLabel);
+                  return KeyEventResult.handled;
+                }
+                // Backspace
+                if (key == LogicalKeyboardKey.backspace) {
+                  ctrl.backspaceAtSelection();
+                  return KeyEventResult.handled;
+                }
+                // Enter
+                if (key == LogicalKeyboardKey.enter ||
+                    key == LogicalKeyboardKey.numpadEnter) {
+                  _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
               },
-              onDoubleTap: (i) {
-                ctrl.cycleFeedback(i);
-              },
-              onSubmit: () {
-                _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
-              },
-              onTileFocusChange: (hasFocus) {
-                ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
-              },
+              child: FeedbackRow(
+                tiles: widget.tiles,
+                onToggleFeedback: widget.onToggleFeedback,
+                onLetterChanged: widget.onLetterChanged,
+                maxWidth: widget.maxWidth,
+                focusNodes: _nodes,
+                // Unlock prefix tile when a filler was just applied
+                lockFirstTile:
+                    (uiState.config.prefix ?? '').isNotEmpty &&
+                    !uiState.unlockPrefixThisRow,
+                selectedIndex: uiState.selectedIndex,
+                onSelect: (i) {
+                  ctrl.selectTile(i);
+                },
+                onDoubleTap: (i) {
+                  ctrl.cycleFeedback(i);
+                },
+                onSubmit: () {
+                  _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+                },
+                onTileFocusChange: (hasFocus) {
+                  ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
+                },
+              ),
             ),
           ),
         );

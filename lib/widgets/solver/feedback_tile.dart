@@ -83,6 +83,9 @@ class FeedbackTile extends StatelessWidget {
         autofocus: false,
         // Ensures mobile soft keyboard can appear when tile gains focus
         canRequestFocus: true,
+        // On mobile, request focus and show keyboard on long press as a fallback
+        // by enabling focus request on gestures above; additionally, ensure
+        // TextField can bring up keyboard by not setting readOnly.
         textAlign: TextAlign.center,
         textAlignVertical: TextAlignVertical.center,
         textCapitalization: TextCapitalization.characters,
