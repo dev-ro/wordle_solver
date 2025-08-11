@@ -19,7 +19,9 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          firebase deploy --only firestore,storage --non-interactive --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
+          if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "" ]; then PROJECT_ID="wordle-solver-kyle"; fi
+          firebase deploy --only firestore,storage --non-interactive --project "$PROJECT_ID"
 
   deploy-hosting:
     name: Deploy Hosting
@@ -42,6 +44,8 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          firebase deploy --only hosting --non-interactive --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
+          if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "" ]; then PROJECT_ID="wordle-solver-kyle"; fi
+          firebase deploy --only hosting --non-interactive --project "$PROJECT_ID"
 
 
