@@ -419,7 +419,11 @@ class _GridSection extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: state.isLoading
                         ? null
-                        : controller.requestRecommendations,
+                        : () => _gridSubmitWithFeedbackCheck(
+                            context,
+                            state,
+                            controller,
+                          ),
                     icon: state.isLoading
                         ? const SizedBox(
                             width: 16,
@@ -617,75 +621,6 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
       },
     );
   }
-
-  Future<void> _gridSubmitWithFeedbackCheck(
-    BuildContext context,
-    SolverUiState uiState,
-    SolverController ctrl,
-  ) async {
-    final current = uiState.grid.isNotEmpty
-        ? uiState.grid.last
-        : const <SolverTile>[];
-    final allBlack =
-        current.isNotEmpty &&
-        current.every((t) => t.feedback == TileFeedback.black);
-    if (!allBlack) {
-      ctrl.requestRecommendations();
-      return;
-    }
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    bool proceed = false;
-    if (isIOS) {
-      proceed =
-          await showCupertinoDialog<bool>(
-            context: context,
-            builder: (ctx) => CupertinoAlertDialog(
-              title: const Text('All tiles are black'),
-              content: const Text(
-                'You have not set any feedback colors. Submit anyway?',
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  isDefaultAction: false,
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Set colors'),
-                ),
-                CupertinoDialogAction(
-                  isDefaultAction: true,
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Submit'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-    } else {
-      proceed =
-          await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('All tiles are black'),
-              content: const Text(
-                'You have not set any feedback colors. Submit anyway?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Set colors'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Submit'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-    }
-    if (proceed) {
-      ctrl.requestRecommendations();
-    }
-  }
 }
 
 // Top-level helper so both the screen-level and row-level handlers can invoke the same
@@ -695,6 +630,8 @@ Future<void> _gridSubmitWithFeedbackCheck(
   SolverUiState uiState,
   SolverController ctrl,
 ) async {
+  // Prevent concurrent submissions
+  if (uiState.isLoading) return;
   final current = uiState.grid.isNotEmpty
       ? uiState.grid.last
       : const <SolverTile>[];
@@ -702,7 +639,8 @@ Future<void> _gridSubmitWithFeedbackCheck(
       current.isNotEmpty &&
       current.every((t) => t.feedback == TileFeedback.black);
   if (!allBlack) {
-    await ctrl.requestRecommendations();
+    if (uiState.isLoading) return;
+    ctrl.requestRecommendations();
     return;
   }
   final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
@@ -755,6 +693,7 @@ Future<void> _gridSubmitWithFeedbackCheck(
         false;
   }
   if (proceed) {
-    await ctrl.requestRecommendations();
+    if (uiState.isLoading) return;
+    ctrl.requestRecommendations();
   }
 }
