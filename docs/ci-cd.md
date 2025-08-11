@@ -27,13 +27,8 @@ This repository uses GitHub Actions for automated testing, building, and deploym
 - ✅ Deploy preview to Firebase Hosting
 - ✅ Comment with preview URL on PR
 
-### 4. **Deploy Cloud Functions** (`deploy-functions.yml`)
-**Triggers:** Changes to `functions/` directory, manual dispatch
-
-- ✅ Python syntax validation
-- ✅ Dependency installation and testing
-- ✅ Deploy to Firebase Functions
-- ✅ Function health check
+### 4. (Removed) Deploy Cloud Functions
+Cloud Functions have been removed. The solver runs client‑side. No functions are deployed.
 
 ### 5. **Deploy Database Rules** (`deploy-database.yml`)
 **Triggers:** Changes to `firestore.rules`, `firestore.indexes.json`, `storage.rules`
@@ -103,16 +98,13 @@ Add these badges to your main README.md:
 
 - **Flutter:** `flutter analyze --fatal-infos`
 - **Dart Formatting:** `dart format --set-exit-if-changed`
-- **Python Linting:** `flake8` with max line length 100
-- **Python Formatting:** `black`
-- **Type Checking:** `mypy` for Python functions
 - **Security:** TruffleHog for secret detection
 
 ## 🧪 Testing
 
 - **Flutter Tests:** `flutter test --coverage`
 - **Coverage Reporting:** Uploaded to Codecov
-- **Python Tests:** `pytest` with coverage (when test files exist)
+  
 
 ## 🔄 Branch Protection
 

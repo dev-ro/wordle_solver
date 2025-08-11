@@ -1,6 +1,6 @@
 # Wordle Solver (Flutter + Firebase)
 
-A fast, feedback‑driven Wordle assistant with a clean Flutter UI and a Python solver running on Firebase Cloud Functions.
+A fast, feedback‑driven Wordle assistant with a clean Flutter UI and a fully client‑side solver. Firebase is used for auth and hosting dictionaries in Storage.
 
 ## Play and test
 
@@ -59,13 +59,12 @@ Frontend (Flutter):
 - Components: `lib/widgets/solver/feedback_row.dart`, `feedback_tile.dart`, `recommendations_panel.dart`, `filler_results.dart`
 - Local dictionary loading for filler features (`lib/services/filler_words_service.dart`)
 
-Backend (Firebase Python Functions):
-- Callable function `calculate_next_move` in `functions/main.py`
-- Reads dictionaries from Cloud Storage with in‑memory cache (warm starts are fast)
-- Returns recommendations, remaining words/count, variable positions, filler suggestions
+Backend:
+- None required on the critical path. Solver runs fully client-side.
+- Firebase Storage hosts dictionaries; app reads via client SDK with asset fallback.
 
 CI/CD & Security:
-- Workflows in `.github/workflows/ci.yml` for Flutter/Python, coverage, and security scans (pip‑audit, OSV‑Scanner, TruffleHog)
+- Workflows in `.github/workflows/ci.yml` for Flutter, coverage, and security scans (OSV‑Scanner, TruffleHog)
 - Bash scripts: `scripts/format.sh`, `scripts/deploy.sh`, `scripts/upload-dictionaries.sh`
 
 Further reading:

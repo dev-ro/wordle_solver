@@ -46,6 +46,9 @@ class SolverUiState {
   // When true, temporarily unlock the prefix tile (first tile) for the current row.
   // This is set when a filler word is applied so the user can change its color.
   final bool unlockPrefixThisRow;
+  // When true, suppress carry-forward of greens when adding the next row once.
+  // Used to guarantee a clean slate after reset/new game.
+  final bool suppressCarryForwardOnce;
 
   const SolverUiState({
     required this.config,
@@ -57,6 +60,7 @@ class SolverUiState {
     required this.currentRowFeedbackTouched,
     this.pendingGreenLocks,
     this.unlockPrefixThisRow = false,
+    this.suppressCarryForwardOnce = false,
   });
 
   // Sentinels to allow explicitly setting nullable fields to null while
@@ -73,6 +77,7 @@ class SolverUiState {
     bool? currentRowFeedbackTouched,
     Map<int, String>? pendingGreenLocks,
     bool? unlockPrefixThisRow,
+    bool? suppressCarryForwardOnce,
   }) {
     return SolverUiState(
       config: config ?? this.config,
@@ -89,6 +94,8 @@ class SolverUiState {
           currentRowFeedbackTouched ?? this.currentRowFeedbackTouched,
       pendingGreenLocks: pendingGreenLocks ?? this.pendingGreenLocks,
       unlockPrefixThisRow: unlockPrefixThisRow ?? this.unlockPrefixThisRow,
+      suppressCarryForwardOnce:
+          suppressCarryForwardOnce ?? this.suppressCarryForwardOnce,
     );
   }
 }
@@ -113,6 +120,7 @@ class SolverController extends StateNotifier<SolverUiState> {
           currentRowFeedbackTouched: false,
           pendingGreenLocks: null,
           unlockPrefixThisRow: false,
+          suppressCarryForwardOnce: false,
         ),
       );
 
@@ -372,11 +380,33 @@ class SolverController extends StateNotifier<SolverUiState> {
     final currentRow = List<SolverTile>.from(rows.removeLast());
     int? lastSetIndex;
     for (int i = 0; i < currentRow.length && i < word.length; i++) {
-      if (!isTileEditable(i)) continue;
       final ch = word[i].toLowerCase();
       if (!RegExp(r'^[a-z]$').hasMatch(ch)) continue;
+      // Always enforce prefix at index 0, even if tile is locked
+      if (i == 0) {
+        final p = state.config.prefix;
+        if (p != null && p.isNotEmpty) {
+          currentRow[0] = currentRow[0].copyWith(
+            letter: p[0].toLowerCase(),
+            feedback: TileFeedback.green,
+          );
+          lastSetIndex = 0;
+          continue;
+        }
+      }
+      if (!isTileEditable(i)) continue;
       currentRow[i] = currentRow[i].copyWith(letter: ch);
       lastSetIndex = i;
+    }
+    // If prefix exists but selected word was shorter/other conditions skipped index 0,
+    // still ensure prefix letter and green is reflected on current row.
+    final p = state.config.prefix;
+    if (p != null && p.isNotEmpty && currentRow.isNotEmpty) {
+      currentRow[0] = currentRow[0].copyWith(
+        letter: p[0].toLowerCase(),
+        feedback: TileFeedback.green,
+      );
+      lastSetIndex ??= 0;
     }
     rows.add(currentRow);
     state = state.copyWith(
@@ -619,6 +649,8 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
       unlockPrefixThisRow: false,
+      // Ensure the next appended row (after first submission) does not carry forward prior greens
+      suppressCarryForwardOnce: true,
     );
   }
 
@@ -724,7 +756,6 @@ class SolverController extends StateNotifier<SolverUiState> {
 
   Future<void> requestRecommendations() async {
     final currentRow = state.grid.last;
-    final prefix = state.config.prefix;
     bool usedCurrentRowAsGuess = false;
 
     // Build history ignoring an incomplete current row (allow recommendations anytime)
@@ -779,30 +810,34 @@ class SolverController extends StateNotifier<SolverUiState> {
           state.config.wordLength,
           (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
         );
-        // Carry forward greens: prefer pending locks captured before filler; else use last row greens
-        final pending = state.pendingGreenLocks;
-        if (pending != null && pending.isNotEmpty) {
-          for (final entry in pending.entries) {
-            final i = entry.key;
-            if (i >= 0 && i < newRow.length) {
-              newRow[i] = newRow[i].copyWith(
-                letter: entry.value,
-                feedback: TileFeedback.green,
-              );
+        // Carry forward greens unless explicitly suppressed (after a reset/new game)
+        if (!state.suppressCarryForwardOnce) {
+          // Prefer pending locks captured before filler; else use last row greens
+          final pending = state.pendingGreenLocks;
+          if (pending != null && pending.isNotEmpty) {
+            for (final entry in pending.entries) {
+              final i = entry.key;
+              if (i >= 0 && i < newRow.length) {
+                newRow[i] = newRow[i].copyWith(
+                  letter: entry.value,
+                  feedback: TileFeedback.green,
+                );
+              }
             }
-          }
-        } else {
-          final lastRow = state.grid.last;
-          for (int i = 0; i < lastRow.length && i < newRow.length; i++) {
-            if (lastRow[i].feedback == TileFeedback.green) {
-              newRow[i] = newRow[i].copyWith(
-                letter: lastRow[i].letter,
-                feedback: TileFeedback.green,
-              );
+          } else {
+            final lastRow = state.grid.last;
+            for (int i = 0; i < lastRow.length && i < newRow.length; i++) {
+              if (lastRow[i].feedback == TileFeedback.green) {
+                newRow[i] = newRow[i].copyWith(
+                  letter: lastRow[i].letter,
+                  feedback: TileFeedback.green,
+                );
+              }
             }
           }
         }
         // Auto-populate prefix on the new row if present
+        final prefix = state.config.prefix;
         if (prefix != null && prefix.isNotEmpty) {
           newRow[0] = newRow[0].copyWith(
             letter: prefix[0].toLowerCase(),
@@ -821,6 +856,10 @@ class SolverController extends StateNotifier<SolverUiState> {
         pendingGreenLocks: null,
         // Once we move to the next step/row, relock prefix if present
         unlockPrefixThisRow: false,
+        // If carry-forward was suppressed for this transition, clear the flag now
+        suppressCarryForwardOnce: state.suppressCarryForwardOnce
+            ? false
+            : state.suppressCarryForwardOnce,
         // After consuming a row and appending a new one, start selection at first tile
         selectedIndex: usedCurrentRowAsGuess ? 0 : state.selectedIndex,
       );
