@@ -424,6 +424,8 @@ class _GridSectionState extends State<_GridSection> {
     final rowCount = widget.state.grid.length;
     if (rowCount == 0) return;
     _rowKeys[rowCount - 1]?.currentState?.focusFirstEmpty();
+    // Explicitly request the soft keyboard on mobile after focusing a tile
+    SystemChannels.textInput.invokeMethod('TextInput.show');
   }
 
   @override

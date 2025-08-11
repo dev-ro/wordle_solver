@@ -74,6 +74,7 @@ class FeedbackTile extends StatelessWidget {
         return KeyEventResult.ignored;
       },
       child: TextField(
+        focusNode: focusNode,
         showCursor: false,
         cursorColor: Colors.transparent,
         enableInteractiveSelection: false,
@@ -162,7 +163,16 @@ class FeedbackTile extends StatelessWidget {
             // Single tap selects only; long-press cycles; allow cycling even when green
             onTap: isLocked ? null : onTap,
             onDoubleTap: isLocked ? null : onDoubleTap,
-            onLongPress: isLocked ? null : onLongPress,
+            onLongPress: isLocked
+                ? null
+                : () async {
+                    // Backup: long-press should open the keyboard and then perform the original action
+                    FocusScope.of(context).requestFocus(focusNode);
+                    await SystemChannels.textInput.invokeMethod(
+                      'TextInput.show',
+                    );
+                    onLongPress?.call();
+                  },
           ),
         ),
       ],
