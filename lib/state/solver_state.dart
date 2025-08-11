@@ -242,9 +242,11 @@ class SolverController extends StateNotifier<SolverUiState> {
 
   void setDictionary(String dictionaryName) {
     // Changing dictionary starts a new game: clear prefix and board
-    final newConfig = state.config.copyWith(
-      dictionary: dictionaryName,
+    final newConfig = SolverConfig(
+      wordLength: state.config.wordLength,
       prefix: null,
+      dictionary: dictionaryName,
+      autoCopyOnSelect: state.config.autoCopyOnSelect,
     );
     final length = newConfig.wordLength;
     final newRow = List.generate(
@@ -269,8 +271,13 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void setPrefix(String? prefix) {
-    // Update config
-    final newConfig = state.config.copyWith(prefix: prefix);
+    // Update config with explicit prefix (allow null to clear)
+    final newConfig = SolverConfig(
+      wordLength: state.config.wordLength,
+      prefix: prefix,
+      dictionary: state.config.dictionary,
+      autoCopyOnSelect: state.config.autoCopyOnSelect,
+    );
 
     // Reflect prefix into the current input row: auto-fill first letter when present;
     // clear it when prefix is removed
@@ -293,6 +300,13 @@ class SolverController extends StateNotifier<SolverUiState> {
     }
 
     state = state.copyWith(config: newConfig, grid: rows, errorMessage: null);
+  }
+
+  // Clear the deduced prefix and make the first tile editable again.
+  void clearPrefix() {
+    setPrefix(null);
+    // Ensure selection returns to the first tile for convenient typing
+    state = state.copyWith(selectedIndex: 0);
   }
 
   void setLetter(int colIndex, String value) {
@@ -364,7 +378,12 @@ class SolverController extends StateNotifier<SolverUiState> {
 
   void resetGame() {
     // New game resets everything, including prefix
-    final newConfig = state.config.copyWith(prefix: null);
+    final newConfig = SolverConfig(
+      wordLength: state.config.wordLength,
+      prefix: null,
+      dictionary: state.config.dictionary,
+      autoCopyOnSelect: state.config.autoCopyOnSelect,
+    );
     final length = newConfig.wordLength;
     final newRow = List.generate(
       length,
@@ -430,7 +449,20 @@ class SolverController extends StateNotifier<SolverUiState> {
     bool usedCurrentRowAsGuess = false;
 
     // Build history ignoring an incomplete current row (allow recommendations anytime)
-    List<HistoryEntry> newHistory = _toHistory();
+    final preSubmitHistory = _toHistory();
+    List<HistoryEntry> newHistory = preSubmitHistory;
+
+    // Simplified rule: on the first submission, if the first tile is green and
+    // a letter is present, that letter is the prefix. This applies even when the
+    // row is incomplete.
+    if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
+      if (currentRow.isNotEmpty) {
+        final first = currentRow.first;
+        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
+          setPrefix(first.letter.toLowerCase());
+        }
+      }
+    }
 
     final isRowComplete = !currentRow.any((t) => t.letter.isEmpty);
     if (isRowComplete) {
@@ -450,6 +482,8 @@ class SolverController extends StateNotifier<SolverUiState> {
         HistoryEntry(guess: guess, feedback: feedback),
       ];
       usedCurrentRowAsGuess = true;
+
+      // prefix deduction handled above for both incomplete and complete rows
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);

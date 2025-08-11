@@ -121,35 +121,54 @@ class _TopControls extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
-                width: 140,
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Prefix',
-                    labelStyle: TextStyle(color: Colors.white70),
+              // Prefix input removed: prefix is now deduced automatically
+              if ((state.config.prefix ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF15151A).withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white24, width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Prefix: ${(state.config.prefix ?? '').toUpperCase()}',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              onPressed: () => controller.clearPrefix(),
+                              icon: const Icon(Icons.clear, size: 16),
+                              label: const Text(
+                                'Clear',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 0,
+                                ),
+                                minimumSize: const Size(0, 0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLength: 1,
-                  buildCounter:
-                      (
-                        _, {
-                        required currentLength,
-                        required isFocused,
-                        maxLength,
-                      }) => const SizedBox.shrink(),
-                  style: const TextStyle(color: Colors.white),
-                  onChanged: (v) => controller.setPrefix(
-                    v.isEmpty ? null : v[0].toLowerCase(),
-                  ),
-                  onEditingComplete: () {
-                    final node = ref.read(gridKeyboardFocusNodeProvider);
-                    FocusScope.of(context).requestFocus(node);
-                  },
-                  onSubmitted: (_) {
-                    final node = ref.read(gridKeyboardFocusNodeProvider);
-                    FocusScope.of(context).requestFocus(node);
-                  },
                 ),
-              ),
               const SizedBox(width: 12),
               Flexible(
                 flex: 1,
