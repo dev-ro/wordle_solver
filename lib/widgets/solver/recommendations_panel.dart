@@ -6,11 +6,13 @@ import '../common/aurora.dart';
 class RecommendationsPanel extends StatelessWidget {
   final SolverResponse? response;
   final ValueChanged<String> onSelectWord;
+  final bool isLoading;
 
   const RecommendationsPanel({
     super.key,
     required this.response,
     required this.onSelectWord,
+    this.isLoading = false,
   });
 
   @override
@@ -26,7 +28,22 @@ class RecommendationsPanel extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        if (response == null) ...[
+        if (isLoading) ...[
+          const SizedBox(height: 8),
+          const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Loading recommendations…',
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+        ] else if (response == null) ...[
           Text(
             'Tap Submit to get suggestions',
             style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),

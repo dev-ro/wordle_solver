@@ -1,5 +1,6 @@
 // import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 
 import '../models/solver_models.dart';
 import '../repositories/solver_repository.dart';
@@ -102,6 +103,7 @@ class SolverUiState {
 
 class SolverController extends StateNotifier<SolverUiState> {
   final SolverRepository repository;
+  Timer? _lengthChangeDebounce;
 
   SolverController({required this.repository})
     : super(
@@ -122,7 +124,27 @@ class SolverController extends StateNotifier<SolverUiState> {
           unlockPrefixThisRow: false,
           suppressCarryForwardOnce: false,
         ),
-      );
+      ) {
+    _scheduleInitialRecommendations();
+  }
+
+  // Kick off initial recommendations shortly after controller is created.
+  // This runs on app load to populate the recommendations panel automatically.
+  void _scheduleInitialRecommendations() {
+    // Use microtask to avoid synchronous state changes during provider build
+    Future.microtask(() {
+      if (!state.isLoading) {
+        // ignore: unawaited_futures
+        requestRecommendations();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _lengthChangeDebounce?.cancel();
+    super.dispose();
+  }
 
   void setWordLength(int length) {
     final clamped = length < 3 ? 3 : (length > 20 ? 20 : length);
@@ -150,6 +172,15 @@ class SolverController extends StateNotifier<SolverUiState> {
       pendingGreenLocks: null,
       unlockPrefixThisRow: false,
     );
+
+    // Debounce recommendation recompute while sliding the length control
+    _lengthChangeDebounce?.cancel();
+    _lengthChangeDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!state.isLoading) {
+        // ignore: unawaited_futures
+        requestRecommendations();
+      }
+    });
   }
 
   // Note: color controls are not locked by prefix; only historical known greens enforce green
@@ -539,6 +570,13 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
     );
+
+    // Trigger immediate recompute when the first tile turns green
+    if (colIndex == 0 && nextColor == TileFeedback.green && !state.isLoading) {
+      // Fire-and-forget; UI will reflect loading in panel
+      // ignore: unawaited_futures
+      requestRecommendations();
+    }
   }
 
   // Set feedback color on the most relevant tile for the user's current typing flow.
@@ -573,6 +611,12 @@ class SolverController extends StateNotifier<SolverUiState> {
     // Apply feedback without moving selection so typing continues to the next tile
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
+
+    // Trigger immediate recompute when the first tile turns green
+    if (idx == 0 && nextColor == TileFeedback.green && !state.isLoading) {
+      // ignore: unawaited_futures
+      requestRecommendations();
+    }
   }
 
   // Reset all feedback colors in the current input row to black while preserving letters.
@@ -657,6 +701,14 @@ class SolverController extends StateNotifier<SolverUiState> {
       // Ensure the next appended row (after first submission) does not carry forward prior greens
       suppressCarryForwardOnce: true,
     );
+
+    // After resetting to defaults, immediately load fresh recommendations
+    Future.microtask(() {
+      if (!state.isLoading) {
+        // ignore: unawaited_futures
+        requestRecommendations();
+      }
+    });
   }
 
   // Mark the current row as a confirmed win: set all tiles to green.
