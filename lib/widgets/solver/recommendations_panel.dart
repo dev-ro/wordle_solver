@@ -88,11 +88,34 @@ class RecommendationsPanel extends StatelessWidget {
               final availableWidth = c.maxWidth;
               final tileWidth =
                   (availableWidth - (columns - 1) * spacing) / columns;
-              // Target a compact height that fits text + small spacing + inner paddings
-              const targetHeight = 56.0;
+              // Compute target height from content to avoid clipping at larger text scales
+              final textScaler = MediaQuery.textScalerOf(context);
+              const wordFontSize = 15.0;
+              const scoreFontSize = 11.0;
+              const interTextSpacing = 3.0;
+              // AuroraHoverTile padding: vertical: 6 (top) + 6 (bottom) => 12 total
+              const tileVerticalPaddingTotal = 12.0;
+              // AuroraHoverTile border/margin overhead: 1.5 top + 1.5 bottom => 3
+              const borderOverhead = 3.0;
+              // Safety for font leading/rounding
+              const safetyFudge = 6.0;
+
+              final scaledWordFont = textScaler.scale(wordFontSize);
+              final scaledScoreFont = textScaler.scale(scoreFontSize);
+
+              final dynamicContentHeight =
+                  scaledWordFont + interTextSpacing + scaledScoreFont;
+              final targetHeight =
+                  dynamicContentHeight +
+                  tileVerticalPaddingTotal +
+                  borderOverhead +
+                  safetyFudge;
+
               double computedAspectRatio = tileWidth / targetHeight;
               // Clamp to keep aesthetics across devices
-              computedAspectRatio = computedAspectRatio.clamp(1.8, 2.6);
+              computedAspectRatio = computedAspectRatio
+                  .clamp(1.8, 2.6)
+                  .toDouble();
 
               return GridView.builder(
                 shrinkWrap: true,
@@ -122,6 +145,8 @@ class RecommendationsPanel extends StatelessWidget {
                         Text(
                           r.word.toUpperCase(),
                           textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -131,11 +156,13 @@ class RecommendationsPanel extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           r.score.toStringAsFixed(2),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
