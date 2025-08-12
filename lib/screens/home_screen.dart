@@ -94,7 +94,18 @@ class HomeScreen extends ConsumerWidget {
                       current.isNotEmpty &&
                       !current.any((t) => t.letter.isEmpty);
                   if (isComplete) {
-                    _gridSubmitWithFeedbackCheck(context, state, controller);
+                    _gridSubmitWithFeedbackCheck(
+                      context,
+                      state,
+                      controller,
+                      onNewGame: () {
+                        // Mirror New button behavior
+                        controller.resetGame();
+                        ref
+                            .read(fillerControllerProvider.notifier)
+                            .setQuery('', config: state.config);
+                      },
+                    );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -278,22 +289,26 @@ class _TopControls extends ConsumerWidget {
                               style: const TextStyle(color: Colors.white70),
                             ),
                             const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: () => controller.clearPrefix(),
-                              icon: const Icon(Icons.clear, size: 16),
-                              label: const Text(
-                                'Clear',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 0,
+                            Tooltip(
+                              message:
+                                  'Clear the deduced prefix and unlock first tile',
+                              child: TextButton.icon(
+                                onPressed: () => controller.clearPrefix(),
+                                icon: const Icon(Icons.clear, size: 16),
+                                label: const Text(
+                                  'Clear',
+                                  style: TextStyle(fontSize: 12),
                                 ),
-                                minimumSize: const Size(0, 0),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 0,
+                                  ),
+                                  minimumSize: const Size(0, 0),
+                                ),
                               ),
                             ),
                           ],
@@ -515,49 +530,55 @@ class _GridSectionState extends State<_GridSection> {
                 child: Wrap(
                   spacing: 12,
                   children: [
-                    _ColorPickTile(
-                      color: const Color(0xFF2E7D32),
-                      borderColor: Colors.white24,
-                      onTap: () {
-                        // Safely resolve the target index within the current row
-                        if (state.grid.isEmpty || state.grid.last.isEmpty) {
-                          return;
-                        }
-                        int idx = state.selectedIndex ?? 0;
-                        final lastRow = state.grid.last;
-                        if (idx < 0 || idx >= lastRow.length) {
-                          idx = 0;
-                        }
-                        final current = lastRow[idx].feedback;
-                        controller.setTileFeedback(
-                          idx,
-                          current == TileFeedback.green
-                              ? TileFeedback.black
-                              : TileFeedback.green,
-                        );
-                      },
+                    Tooltip(
+                      message: 'Mark selected letter as Green (1)',
+                      child: _ColorPickTile(
+                        color: const Color(0xFF2E7D32),
+                        borderColor: Colors.white24,
+                        onTap: () {
+                          // Safely resolve the target index within the current row
+                          if (state.grid.isEmpty || state.grid.last.isEmpty) {
+                            return;
+                          }
+                          int idx = state.selectedIndex ?? 0;
+                          final lastRow = state.grid.last;
+                          if (idx < 0 || idx >= lastRow.length) {
+                            idx = 0;
+                          }
+                          final current = lastRow[idx].feedback;
+                          controller.setTileFeedback(
+                            idx,
+                            current == TileFeedback.green
+                                ? TileFeedback.black
+                                : TileFeedback.green,
+                          );
+                        },
+                      ),
                     ),
-                    _ColorPickTile(
-                      color: const Color(0xFFF9A825),
-                      borderColor: Colors.white24,
-                      onTap: () {
-                        // Safely resolve the target index within the current row
-                        if (state.grid.isEmpty || state.grid.last.isEmpty) {
-                          return;
-                        }
-                        int idx = state.selectedIndex ?? 0;
-                        final lastRow = state.grid.last;
-                        if (idx < 0 || idx >= lastRow.length) {
-                          idx = 0;
-                        }
-                        final current = lastRow[idx].feedback;
-                        controller.setTileFeedback(
-                          idx,
-                          current == TileFeedback.yellow
-                              ? TileFeedback.black
-                              : TileFeedback.yellow,
-                        );
-                      },
+                    Tooltip(
+                      message: 'Mark selected letter as Yellow (2)',
+                      child: _ColorPickTile(
+                        color: const Color(0xFFF9A825),
+                        borderColor: Colors.white24,
+                        onTap: () {
+                          // Safely resolve the target index within the current row
+                          if (state.grid.isEmpty || state.grid.last.isEmpty) {
+                            return;
+                          }
+                          int idx = state.selectedIndex ?? 0;
+                          final lastRow = state.grid.last;
+                          if (idx < 0 || idx >= lastRow.length) {
+                            idx = 0;
+                          }
+                          final current = lastRow[idx].feedback;
+                          controller.setTileFeedback(
+                            idx,
+                            current == TileFeedback.yellow
+                                ? TileFeedback.black
+                                : TileFeedback.yellow,
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -567,72 +588,174 @@ class _GridSectionState extends State<_GridSection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton.icon(
-                      style: compactButtonStyle,
-                      onPressed: state.isLoading
-                          ? null
-                          : () async {
-                              // Confirm only if last row has a complete word
-                              if (state.grid.isEmpty ||
-                                  state.grid.last.isEmpty) {
-                                return;
-                              }
-                              final isComplete = !state.grid.last.any(
-                                (t) => t.letter.isEmpty,
-                              );
-                              if (!isComplete) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Enter a complete word to confirm win',
-                                    ),
-                                    duration: Duration(milliseconds: 1500),
-                                  ),
-                                );
-                                return;
-                              }
-                              // Validate against previous feedback/constraints
-                              final ok = await controller
-                                  .canConfirmWinWithCurrentRowWord();
-                              if (!context.mounted) return;
-                              if (!ok) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Word conflicts with previous feedback',
-                                    ),
-                                    duration: Duration(milliseconds: 1500),
-                                  ),
-                                );
-                                return;
-                              }
-                              controller.confirmWin();
-                            },
-                      icon: Icon(
-                        Icons.check_circle,
-                        size: isNarrow ? 18 : null,
-                      ),
-                      label: Text('Confirm', style: labelTextStyle),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      // Determine eligibility for Confirm
+                      final current = state.grid.isNotEmpty
+                          ? state.grid.last
+                          : const <SolverTile>[];
+                      final isComplete =
+                          !state.isLoading &&
+                          current.isNotEmpty &&
+                          !current.any((t) => t.letter.isEmpty);
+                      final guess = current.isNotEmpty
+                          ? current.map((t) => t.letter).join()
+                          : '';
+                      final remaining =
+                          state.lastResponse?.remainingWords ??
+                          const <String>[];
+                      final hasHistory = state.grid.length > 1;
+                      final isInRemaining = remaining.contains(guess);
+                      final canConfirm =
+                          isComplete &&
+                          (isInRemaining || (!hasHistory && guess.isNotEmpty));
+
+                      final tooltipMsg = canConfirm
+                          ? (!hasHistory && !isInRemaining
+                                ? 'Confirm first-try win'
+                                : 'Confirm win with current word')
+                          : 'Enter a complete valid word to enable Confirm';
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Tooltip(
+                          message: tooltipMsg,
+                          child: ElevatedButton.icon(
+                            style: compactButtonStyle,
+                            onPressed: canConfirm
+                                ? () async {
+                                    if (!hasHistory && !isInRemaining) {
+                                      // First guess scenario: ask user to confirm
+                                      final isIOS =
+                                          Theme.of(context).platform ==
+                                          TargetPlatform.iOS;
+                                      bool proceed = false;
+                                      if (isIOS) {
+                                        proceed =
+                                            await showCupertinoDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) =>
+                                                  CupertinoAlertDialog(
+                                                    title: const Text(
+                                                      'Confirm first-try win',
+                                                    ),
+                                                    content: Text(
+                                                      'Confirm that "$guess" is the correct word?',
+                                                    ),
+                                                    actions: [
+                                                      CupertinoDialogAction(
+                                                        isDefaultAction: false,
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              ctx,
+                                                            ).pop(false),
+                                                        child: const Text(
+                                                          'Cancel',
+                                                        ),
+                                                      ),
+                                                      CupertinoDialogAction(
+                                                        isDefaultAction: true,
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              ctx,
+                                                            ).pop(true),
+                                                        child: const Text(
+                                                          'Confirm',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                            ) ??
+                                            false;
+                                      } else {
+                                        proceed =
+                                            await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                  'Confirm first-try win',
+                                                ),
+                                                content: Text(
+                                                  'Confirm that "$guess" is the correct word?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(true),
+                                                    child: const Text(
+                                                      'Confirm',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ??
+                                            false;
+                                      }
+                                      if (!proceed || !context.mounted) return;
+                                      controller.confirmWin();
+                                      return;
+                                    }
+
+                                    // Regular validation against remaining candidates/history
+                                    final ok = await controller
+                                        .canConfirmWinWithCurrentRowWord();
+                                    if (!context.mounted) return;
+                                    if (!ok) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Word conflicts with previous feedback',
+                                          ),
+                                          duration: Duration(
+                                            milliseconds: 1500,
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    controller.confirmWin();
+                                  }
+                                : null,
+                            icon: Icon(
+                              Icons.check_circle,
+                              size: isNarrow ? 18 : null,
+                            ),
+                            label: Text('Confirm', style: labelTextStyle),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   Consumer(
                     builder: (context, ref, _) {
                       final fillerCtrl = ref.read(
                         fillerControllerProvider.notifier,
                       );
-                      return ElevatedButton.icon(
-                        style: compactButtonStyle,
-                        onPressed: state.isLoading
-                            ? null
-                            : () {
-                                controller.resetGame();
-                                // Clear filler query to reset the filler words list/UI
-                                fillerCtrl.setQuery('', config: state.config);
-                              },
-                        icon: Icon(Icons.refresh, size: isNarrow ? 18 : null),
-                        label: Text('New', style: labelTextStyle),
+                      return Tooltip(
+                        message: 'Start a new game (reset board)',
+                        child: ElevatedButton.icon(
+                          style: compactButtonStyle,
+                          onPressed: state.isLoading
+                              ? null
+                              : () {
+                                  controller.resetGame();
+                                  // Clear filler query to reset the filler words list/UI
+                                  fillerCtrl.setQuery('', config: state.config);
+                                },
+                          icon: Icon(Icons.refresh, size: isNarrow ? 18 : null),
+                          label: Text('New', style: labelTextStyle),
+                        ),
                       );
                     },
                   ),
@@ -695,28 +818,47 @@ class _GridSectionState extends State<_GridSection> {
                           !state.isLoading &&
                           current.isNotEmpty &&
                           !current.any((t) => t.letter.isEmpty);
-                      return ElevatedButton.icon(
-                        style: compactButtonStyle,
-                        onPressed: canSubmit
-                            ? () => _gridSubmitWithFeedbackCheck(
-                                context,
-                                state,
-                                controller,
-                              )
-                            : null,
-                        icon: state.isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Icon(
-                                Icons.send_rounded,
-                                size: isNarrow ? 18 : null,
-                              ),
-                        label: Text('Submit', style: labelTextStyle),
+                      return Tooltip(
+                        message: canSubmit
+                            ? 'Submit current guess (Enter)'
+                            : 'Enter a complete word to enable Submit',
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final fillerCtrl = ref.read(
+                              fillerControllerProvider.notifier,
+                            );
+                            return ElevatedButton.icon(
+                              style: compactButtonStyle,
+                              onPressed: canSubmit
+                                  ? () => _gridSubmitWithFeedbackCheck(
+                                      context,
+                                      state,
+                                      controller,
+                                      onNewGame: () {
+                                        controller.resetGame();
+                                        fillerCtrl.setQuery(
+                                          '',
+                                          config: state.config,
+                                        );
+                                      },
+                                    )
+                                  : null,
+                              icon: state.isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.send_rounded,
+                                      size: isNarrow ? 18 : null,
+                                    ),
+                              label: Text('Submit', style: labelTextStyle),
+                            );
+                          },
+                        ),
                       );
                     },
                   ),
@@ -920,7 +1062,17 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 ctrl.cycleFeedback(i);
               },
               onSubmit: () {
-                _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+                _gridSubmitWithFeedbackCheck(
+                  context,
+                  uiState,
+                  ctrl,
+                  onNewGame: () {
+                    ctrl.resetGame();
+                    ref
+                        .read(fillerControllerProvider.notifier)
+                        .setQuery('', config: uiState.config);
+                  },
+                );
               },
               onTileFocusChange: (hasFocus) {
                 ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
@@ -972,8 +1124,9 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
 Future<void> _gridSubmitWithFeedbackCheck(
   BuildContext context,
   SolverUiState uiState,
-  SolverController ctrl,
-) async {
+  SolverController ctrl, {
+  VoidCallback? onNewGame,
+}) async {
   // Prevent concurrent submissions
   if (uiState.isLoading) return;
   final current = uiState.grid.isNotEmpty
@@ -984,6 +1137,14 @@ Future<void> _gridSubmitWithFeedbackCheck(
       current.every((t) => t.feedback == TileFeedback.black);
   if (!allBlack) {
     if (uiState.isLoading) return;
+    // If all tiles are green (confirmed win), treat submit as New
+    final allGreen =
+        current.isNotEmpty &&
+        current.every((t) => t.feedback == TileFeedback.green);
+    if (allGreen) {
+      onNewGame?.call();
+      return;
+    }
     ctrl.requestRecommendations();
     return;
   }

@@ -571,11 +571,10 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: true,
     );
 
-    // Trigger immediate recompute when the first tile turns green
+    // If the first tile just turned green, refresh recommendations without consuming the row
     if (colIndex == 0 && nextColor == TileFeedback.green && !state.isLoading) {
-      // Fire-and-forget; UI will reflect loading in panel
       // ignore: unawaited_futures
-      requestRecommendations();
+      requestRecommendationsWithoutConsuming();
     }
   }
 
@@ -612,10 +611,47 @@ class SolverController extends StateNotifier<SolverUiState> {
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
 
-    // Trigger immediate recompute when the first tile turns green
+    // If the first tile just turned green, refresh recommendations without consuming the row
     if (idx == 0 && nextColor == TileFeedback.green && !state.isLoading) {
       // ignore: unawaited_futures
-      requestRecommendations();
+      requestRecommendationsWithoutConsuming();
+    }
+  }
+
+  // Refresh recommendations using only prior history (excluding the current input row),
+  // and never append a new row. This is used for immediate feedback when the first tile
+  // is marked green so users can see prefix-informed suggestions without submitting.
+  Future<void> requestRecommendationsWithoutConsuming() async {
+    final currentRow = state.grid.last;
+    final preSubmitHistory = _toHistory(); // excludes current input row
+
+    // Optional prefix deduction on first-turn when prefix not set: if first tile is
+    // green and has a letter, set prefix so recommendations reflect it.
+    if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
+      if (currentRow.isNotEmpty) {
+        final first = currentRow.first;
+        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
+          setPrefix(first.letter.toLowerCase());
+        }
+      }
+    }
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final response = await repository.calculateNextMove(
+        config: state.config,
+        history: preSubmitHistory,
+      );
+      state = state.copyWith(
+        lastResponse: response,
+        isLoading: false,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to get recommendations',
+      );
     }
   }
 
