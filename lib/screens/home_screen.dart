@@ -86,7 +86,23 @@ class HomeScreen extends ConsumerWidget {
                   controller.backspaceAtSelection();
                 } else if (key == LogicalKeyboardKey.enter ||
                     key == LogicalKeyboardKey.numpadEnter) {
-                  _gridSubmitWithFeedbackCheck(context, state, controller);
+                  // Gate submit: only when current row is complete
+                  final current = state.grid.isNotEmpty
+                      ? state.grid.last
+                      : const <SolverTile>[];
+                  final isComplete =
+                      current.isNotEmpty &&
+                      !current.any((t) => t.letter.isEmpty);
+                  if (isComplete) {
+                    _gridSubmitWithFeedbackCheck(context, state, controller);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter a complete word to submit'),
+                        duration: Duration(milliseconds: 1200),
+                      ),
+                    );
+                  }
                 }
               },
               child: Scaffold(
@@ -670,23 +686,39 @@ class _GridSectionState extends State<_GridSection> {
                     },
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    style: compactButtonStyle,
-                    onPressed: state.isLoading
-                        ? null
-                        : () => _gridSubmitWithFeedbackCheck(
-                            context,
-                            state,
-                            controller,
-                          ),
-                    icon: state.isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(Icons.send_rounded, size: isNarrow ? 18 : null),
-                    label: Text('Submit', style: labelTextStyle),
+                  Builder(
+                    builder: (context) {
+                      final current = state.grid.isNotEmpty
+                          ? state.grid.last
+                          : const <SolverTile>[];
+                      final canSubmit =
+                          !state.isLoading &&
+                          current.isNotEmpty &&
+                          !current.any((t) => t.letter.isEmpty);
+                      return ElevatedButton.icon(
+                        style: compactButtonStyle,
+                        onPressed: canSubmit
+                            ? () => _gridSubmitWithFeedbackCheck(
+                                context,
+                                state,
+                                controller,
+                              )
+                            : null,
+                        icon: state.isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                Icons.send_rounded,
+                                size: isNarrow ? 18 : null,
+                              ),
+                        label: Text('Submit', style: labelTextStyle),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -758,6 +790,7 @@ class _RecommendationsSection extends StatelessWidget {
     return AuroraCard(
       child: RecommendationsPanel(
         response: state.lastResponse,
+        isLoading: state.isLoading,
         onSelectWord: (word) {
           controller.applyWordToCurrentRow(word);
           if (state.config.autoCopyOnSelect) {
