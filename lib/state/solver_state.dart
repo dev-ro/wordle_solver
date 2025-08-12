@@ -728,6 +728,8 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void resetGame() {
+    // Immediately invalidate any in-flight computations from the previous game
+    _requestToken++;
     // New game resets everything, including prefix; enforce defaults from Issue #14
     final newConfig = SolverConfig(
       wordLength: 5,
@@ -756,8 +758,6 @@ class SolverController extends StateNotifier<SolverUiState> {
     // After resetting to defaults, immediately load fresh recommendations
     Future.microtask(() {
       if (!state.isLoading) {
-        // Invalidate any in-flight computations from the previous game
-        _requestToken++;
         // ignore: unawaited_futures
         requestRecommendations();
       }
