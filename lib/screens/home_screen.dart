@@ -590,22 +590,122 @@ class _GridSectionState extends State<_GridSection> {
                 children: [
                   Builder(
                     builder: (context) {
-                      final canConfirm =
+                      // Determine eligibility for Confirm
+                      final current = state.grid.isNotEmpty
+                          ? state.grid.last
+                          : const <SolverTile>[];
+                      final isComplete =
                           !state.isLoading &&
-                          state.grid.isNotEmpty &&
-                          state.grid.last.isNotEmpty &&
-                          !state.grid.last.any((t) => t.letter.isEmpty);
+                          current.isNotEmpty &&
+                          !current.any((t) => t.letter.isEmpty);
+                      final guess = current.isNotEmpty
+                          ? current.map((t) => t.letter).join()
+                          : '';
+                      final remaining =
+                          state.lastResponse?.remainingWords ??
+                          const <String>[];
+                      final hasHistory = state.grid.length > 1;
+                      final isInRemaining = remaining.contains(guess);
+                      final canConfirm =
+                          isComplete &&
+                          (isInRemaining || (!hasHistory && guess.isNotEmpty));
+
+                      final tooltipMsg = canConfirm
+                          ? (!hasHistory && !isInRemaining
+                                ? 'Confirm first-try win'
+                                : 'Confirm win with current word')
+                          : 'Enter a complete valid word to enable Confirm';
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: Tooltip(
-                          message: canConfirm
-                              ? 'Confirm win with current word'
-                              : 'Enter a complete valid word to enable Confirm',
+                          message: tooltipMsg,
                           child: ElevatedButton.icon(
                             style: compactButtonStyle,
                             onPressed: canConfirm
                                 ? () async {
-                                    // Validate against previous feedback/constraints
+                                    if (!hasHistory && !isInRemaining) {
+                                      // First guess scenario: ask user to confirm
+                                      final isIOS =
+                                          Theme.of(context).platform ==
+                                          TargetPlatform.iOS;
+                                      bool proceed = false;
+                                      if (isIOS) {
+                                        proceed =
+                                            await showCupertinoDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) =>
+                                                  CupertinoAlertDialog(
+                                                    title: const Text(
+                                                      'Confirm first-try win',
+                                                    ),
+                                                    content: Text(
+                                                      'Confirm that "$guess" is the correct word?',
+                                                    ),
+                                                    actions: [
+                                                      CupertinoDialogAction(
+                                                        isDefaultAction: false,
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              ctx,
+                                                            ).pop(false),
+                                                        child: const Text(
+                                                          'Cancel',
+                                                        ),
+                                                      ),
+                                                      CupertinoDialogAction(
+                                                        isDefaultAction: true,
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              ctx,
+                                                            ).pop(true),
+                                                        child: const Text(
+                                                          'Confirm',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                            ) ??
+                                            false;
+                                      } else {
+                                        proceed =
+                                            await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                  'Confirm first-try win',
+                                                ),
+                                                content: Text(
+                                                  'Confirm that "$guess" is the correct word?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(true),
+                                                    child: const Text(
+                                                      'Confirm',
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ??
+                                            false;
+                                      }
+                                      if (!proceed || !context.mounted) return;
+                                      controller.confirmWin();
+                                      return;
+                                    }
+
+                                    // Regular validation against remaining candidates/history
                                     final ok = await controller
                                         .canConfirmWinWithCurrentRowWord();
                                     if (!context.mounted) return;
