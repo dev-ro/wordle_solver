@@ -81,14 +81,27 @@ class RecommendationsPanel extends StatelessWidget {
                 return Colors.white24; // default
               }
 
+              // Compute a responsive childAspectRatio to ensure a flatter, horizontal rectangle.
+              // Derive from available width instead of hardcoded screen breakpoints.
+              const columns = 3;
+              const spacing = 10.0;
+              final availableWidth = c.maxWidth;
+              final tileWidth =
+                  (availableWidth - (columns - 1) * spacing) / columns;
+              // Target a compact height that fits text + small spacing + inner paddings
+              const targetHeight = 56.0;
+              double computedAspectRatio = tileWidth / targetHeight;
+              // Clamp to keep aesthetics across devices
+              computedAspectRatio = computedAspectRatio.clamp(1.8, 2.6);
+
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.6,
+                  crossAxisCount: columns,
+                  mainAxisSpacing: spacing,
+                  crossAxisSpacing: spacing,
+                  childAspectRatio: computedAspectRatio,
                 ),
                 itemCount: topCount,
                 itemBuilder: (context, index) {
@@ -97,6 +110,11 @@ class RecommendationsPanel extends StatelessWidget {
                     emphasize: index == 0,
                     onTap: () => onSelectWord(r.word),
                     borderColorOverride: borderColorFor(r.score),
+                    // Tighter vertical padding for more rectangular look
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -110,7 +128,7 @@ class RecommendationsPanel extends StatelessWidget {
                             fontSize: 15,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           r.score.toStringAsFixed(2),
                           style: const TextStyle(
