@@ -166,6 +166,8 @@ class SolverController extends StateNotifier<SolverUiState> {
       );
     }
     final newGrid = [newRow];
+    // Invalidate any in-flight computations tied to the previous board
+    _requestToken++;
     state = state.copyWith(
       config: state.config.copyWith(wordLength: clamped),
       grid: newGrid,
@@ -470,6 +472,8 @@ class SolverController extends StateNotifier<SolverUiState> {
       length,
       (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
     );
+    // Invalidate any in-flight computations from prior dictionary/state
+    _requestToken++;
     state = state.copyWith(
       config: newConfig,
       grid: [newRow],
