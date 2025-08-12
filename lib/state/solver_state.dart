@@ -570,6 +570,12 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
     );
+
+    // If the first tile just turned green, refresh recommendations without consuming the row
+    if (colIndex == 0 && nextColor == TileFeedback.green && !state.isLoading) {
+      // ignore: unawaited_futures
+      requestRecommendationsWithoutConsuming();
+    }
   }
 
   // Set feedback color on the most relevant tile for the user's current typing flow.
@@ -604,6 +610,49 @@ class SolverController extends StateNotifier<SolverUiState> {
     // Apply feedback without moving selection so typing continues to the next tile
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
+
+    // If the first tile just turned green, refresh recommendations without consuming the row
+    if (idx == 0 && nextColor == TileFeedback.green && !state.isLoading) {
+      // ignore: unawaited_futures
+      requestRecommendationsWithoutConsuming();
+    }
+  }
+
+  // Refresh recommendations using only prior history (excluding the current input row),
+  // and never append a new row. This is used for immediate feedback when the first tile
+  // is marked green so users can see prefix-informed suggestions without submitting.
+  Future<void> requestRecommendationsWithoutConsuming() async {
+    final currentRow = state.grid.last;
+    final preSubmitHistory = _toHistory(); // excludes current input row
+
+    // Optional prefix deduction on first-turn when prefix not set: if first tile is
+    // green and has a letter, set prefix so recommendations reflect it.
+    if ((state.config.prefix ?? '').isEmpty && preSubmitHistory.isEmpty) {
+      if (currentRow.isNotEmpty) {
+        final first = currentRow.first;
+        if (first.feedback == TileFeedback.green && first.letter.isNotEmpty) {
+          setPrefix(first.letter.toLowerCase());
+        }
+      }
+    }
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final response = await repository.calculateNextMove(
+        config: state.config,
+        history: preSubmitHistory,
+      );
+      state = state.copyWith(
+        lastResponse: response,
+        isLoading: false,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to get recommendations',
+      );
+    }
   }
 
   // Reset all feedback colors in the current input row to black while preserving letters.
