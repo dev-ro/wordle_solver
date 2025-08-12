@@ -104,6 +104,11 @@ class SolverUiState {
 class SolverController extends StateNotifier<SolverUiState> {
   final SolverRepository repository;
   Timer? _lengthChangeDebounce;
+  // Monotonic token to invalidate stale async computations. Any response
+  // from a request whose token is not the latest must be ignored. This fixes
+  // a race where pressing New while a previous compute is in-flight would
+  // allow the old response to overwrite the fresh reset state.
+  int _requestToken = 0;
 
   SolverController({required this.repository})
     : super(
@@ -622,6 +627,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   // and never append a new row. This is used for immediate feedback when the first tile
   // is marked green so users can see prefix-informed suggestions without submitting.
   Future<void> requestRecommendationsWithoutConsuming() async {
+    final int tokenForThisCall = ++_requestToken;
     final currentRow = state.grid.last;
     final preSubmitHistory = _toHistory(); // excludes current input row
 
@@ -642,16 +648,21 @@ class SolverController extends StateNotifier<SolverUiState> {
         config: state.config,
         history: preSubmitHistory,
       );
-      state = state.copyWith(
-        lastResponse: response,
-        isLoading: false,
-        errorMessage: null,
-      );
+      // Ignore stale results if a newer request started after this one.
+      if (tokenForThisCall == _requestToken) {
+        state = state.copyWith(
+          lastResponse: response,
+          isLoading: false,
+          errorMessage: null,
+        );
+      }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed to get recommendations',
-      );
+      if (tokenForThisCall == _requestToken) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to get recommendations',
+        );
+      }
     }
   }
 
@@ -741,6 +752,8 @@ class SolverController extends StateNotifier<SolverUiState> {
     // After resetting to defaults, immediately load fresh recommendations
     Future.microtask(() {
       if (!state.isLoading) {
+        // Invalidate any in-flight computations from the previous game
+        _requestToken++;
         // ignore: unawaited_futures
         requestRecommendations();
       }
@@ -848,6 +861,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   Future<void> requestRecommendations() async {
+    final int tokenForThisCall = ++_requestToken;
     final currentRow = state.grid.last;
     bool usedCurrentRowAsGuess = false;
 
@@ -940,27 +954,31 @@ class SolverController extends StateNotifier<SolverUiState> {
         updatedGrid = [...state.grid, newRow];
       }
 
-      state = state.copyWith(
-        lastResponse: response,
-        isLoading: false,
-        grid: updatedGrid,
-        errorMessage: null,
-        currentRowFeedbackTouched: false,
-        pendingGreenLocks: null,
-        // Once we move to the next step/row, relock prefix if present
-        unlockPrefixThisRow: false,
-        // If carry-forward was suppressed for this transition, clear the flag now
-        suppressCarryForwardOnce: state.suppressCarryForwardOnce
-            ? false
-            : state.suppressCarryForwardOnce,
-        // After consuming a row and appending a new one, start selection at first tile
-        selectedIndex: usedCurrentRowAsGuess ? 0 : state.selectedIndex,
-      );
+      if (tokenForThisCall == _requestToken) {
+        state = state.copyWith(
+          lastResponse: response,
+          isLoading: false,
+          grid: updatedGrid,
+          errorMessage: null,
+          currentRowFeedbackTouched: false,
+          pendingGreenLocks: null,
+          // Once we move to the next step/row, relock prefix if present
+          unlockPrefixThisRow: false,
+          // If carry-forward was suppressed for this transition, clear the flag now
+          suppressCarryForwardOnce: state.suppressCarryForwardOnce
+              ? false
+              : state.suppressCarryForwardOnce,
+          // After consuming a row and appending a new one, start selection at first tile
+          selectedIndex: usedCurrentRowAsGuess ? 0 : state.selectedIndex,
+        );
+      }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Failed to get recommendations',
-      );
+      if (tokenForThisCall == _requestToken) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to get recommendations',
+        );
+      }
     }
   }
 }
