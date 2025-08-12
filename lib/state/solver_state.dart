@@ -570,13 +570,6 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
     );
-
-    // Trigger immediate recompute when the first tile turns green
-    if (colIndex == 0 && nextColor == TileFeedback.green && !state.isLoading) {
-      // Fire-and-forget; UI will reflect loading in panel
-      // ignore: unawaited_futures
-      requestRecommendations();
-    }
   }
 
   // Set feedback color on the most relevant tile for the user's current typing flow.
@@ -611,12 +604,6 @@ class SolverController extends StateNotifier<SolverUiState> {
     // Apply feedback without moving selection so typing continues to the next tile
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
-
-    // Trigger immediate recompute when the first tile turns green
-    if (idx == 0 && nextColor == TileFeedback.green && !state.isLoading) {
-      // ignore: unawaited_futures
-      requestRecommendations();
-    }
   }
 
   // Reset all feedback colors in the current input row to black while preserving letters.
