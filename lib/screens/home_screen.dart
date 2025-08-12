@@ -722,28 +722,42 @@ class _GridSectionState extends State<_GridSection> {
                         message: canSubmit
                             ? 'Submit current guess (Enter)'
                             : 'Enter a complete word to enable Submit',
-                        child: ElevatedButton.icon(
-                          style: compactButtonStyle,
-                          onPressed: canSubmit
-                              ? () => _gridSubmitWithFeedbackCheck(
-                                  context,
-                                  state,
-                                  controller,
-                                )
-                              : null,
-                          icon: state.isLoading
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.send_rounded,
-                                  size: isNarrow ? 18 : null,
-                                ),
-                          label: Text('Submit', style: labelTextStyle),
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final fillerCtrl = ref.read(
+                              fillerControllerProvider.notifier,
+                            );
+                            return ElevatedButton.icon(
+                              style: compactButtonStyle,
+                              onPressed: canSubmit
+                                  ? () => _gridSubmitWithFeedbackCheck(
+                                      context,
+                                      state,
+                                      controller,
+                                      onNewGame: () {
+                                        controller.resetGame();
+                                        fillerCtrl.setQuery(
+                                          '',
+                                          config: state.config,
+                                        );
+                                      },
+                                    )
+                                  : null,
+                              icon: state.isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.send_rounded,
+                                      size: isNarrow ? 18 : null,
+                                    ),
+                              label: Text('Submit', style: labelTextStyle),
+                            );
+                          },
                         ),
                       );
                     },
