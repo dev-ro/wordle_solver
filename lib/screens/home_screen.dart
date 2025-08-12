@@ -94,7 +94,18 @@ class HomeScreen extends ConsumerWidget {
                       current.isNotEmpty &&
                       !current.any((t) => t.letter.isEmpty);
                   if (isComplete) {
-                    _gridSubmitWithFeedbackCheck(context, state, controller);
+                    _gridSubmitWithFeedbackCheck(
+                      context,
+                      state,
+                      controller,
+                      onNewGame: () {
+                        // Mirror New button behavior
+                        controller.resetGame();
+                        ref
+                            .read(fillerControllerProvider.notifier)
+                            .setQuery('', config: state.config);
+                      },
+                    );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -937,7 +948,17 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 ctrl.cycleFeedback(i);
               },
               onSubmit: () {
-                _gridSubmitWithFeedbackCheck(context, uiState, ctrl);
+                _gridSubmitWithFeedbackCheck(
+                  context,
+                  uiState,
+                  ctrl,
+                  onNewGame: () {
+                    ctrl.resetGame();
+                    ref
+                        .read(fillerControllerProvider.notifier)
+                        .setQuery('', config: uiState.config);
+                  },
+                );
               },
               onTileFocusChange: (hasFocus) {
                 ref.read(tileFocusActiveProvider.notifier).state = hasFocus;
@@ -989,8 +1010,9 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
 Future<void> _gridSubmitWithFeedbackCheck(
   BuildContext context,
   SolverUiState uiState,
-  SolverController ctrl,
-) async {
+  SolverController ctrl, {
+  VoidCallback? onNewGame,
+}) async {
   // Prevent concurrent submissions
   if (uiState.isLoading) return;
   final current = uiState.grid.isNotEmpty
@@ -1001,6 +1023,14 @@ Future<void> _gridSubmitWithFeedbackCheck(
       current.every((t) => t.feedback == TileFeedback.black);
   if (!allBlack) {
     if (uiState.isLoading) return;
+    // If all tiles are green (confirmed win), treat submit as New
+    final allGreen =
+        current.isNotEmpty &&
+        current.every((t) => t.feedback == TileFeedback.green);
+    if (allGreen) {
+      onNewGame?.call();
+      return;
+    }
     ctrl.requestRecommendations();
     return;
   }
