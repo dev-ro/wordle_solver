@@ -170,7 +170,8 @@ class RecommendationsPanel extends StatelessWidget {
                     emphasize: index == 0,
                     onTap: () => onSelectWord(r.word),
                     borderGradientOverride: grad,
-                    animatedGlow: grad != null,
+                    // Enable glow by default for medal tiles
+                    animatedGlow: true,
                     // Tighter vertical padding for more rectangular look
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
