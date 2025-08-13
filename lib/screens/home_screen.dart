@@ -598,7 +598,6 @@ class _GridSectionState extends State<_GridSection> {
                             ? state.grid.last
                             : const <SolverTile>[];
                         final isComplete =
-                            !state.isLoading &&
                             current.isNotEmpty &&
                             !current.any((t) => t.letter.isEmpty);
                         final guess = current.isNotEmpty
