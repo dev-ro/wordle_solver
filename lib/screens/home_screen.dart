@@ -262,12 +262,12 @@ class _TopControls extends ConsumerWidget {
                         context,
                       ).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
                       child: Slider(
-                        min: 3,
+                        min: 4,
                         max: 15,
                         // Remove divisions to hide internal ticks, but keep integer snapping
                         value: state.config.wordLength.toDouble(),
                         onChanged: (v) {
-                          final len = v.round().clamp(3, 15);
+                          final len = v.round().clamp(4, 15);
                           controller.setWordLength(len);
                           // Clear filler query as part of full reset semantics
                           final newConfig = state.config.copyWith(

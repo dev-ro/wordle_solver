@@ -152,7 +152,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void setWordLength(int length) {
-    final clamped = length < 3 ? 3 : (length > 15 ? 15 : length);
+    final clamped = length < 4 ? 4 : (length > 15 ? 15 : length);
     // New game semantics for length change: clear prefix and fully reset board/memory
     final newConfig = SolverConfig(
       wordLength: clamped,
