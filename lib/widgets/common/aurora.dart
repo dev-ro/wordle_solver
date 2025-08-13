@@ -156,7 +156,7 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: _shadowColor().withOpacity(_shadowAlpha()),
+                  color: _shadowColor().withValues(alpha: _shadowAlpha()),
                   blurRadius: widget.animatedGlow
                       ? (widget.emphasize ? 26 : 20)
                       : (widget.emphasize ? 22 : 16),
@@ -210,7 +210,9 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
                       borderRadius: BorderRadius.circular(widget.borderRadius),
                       boxShadow: [
                         BoxShadow(
-                          color: _shadowColor().withOpacity(_shadowAlpha()),
+                          color: _shadowColor().withValues(
+                            alpha: _shadowAlpha(),
+                          ),
                           blurRadius: widget.animatedGlow
                               ? (widget.emphasize ? 26 : 20)
                               : (widget.emphasize ? 22 : 16),
