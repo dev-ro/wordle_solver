@@ -627,80 +627,10 @@ class _GridSectionState extends State<_GridSection> {
                             onPressed: canConfirm
                                 ? () async {
                                     if (!hasHistory && !isInRemaining) {
-                                      final isIOS =
-                                          Theme.of(context).platform ==
-                                          TargetPlatform.iOS;
-                                      bool proceed = false;
-                                      if (isIOS) {
-                                        proceed =
-                                            await showCupertinoDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) =>
-                                                  CupertinoAlertDialog(
-                                                    title: const Text(
-                                                      'Confirm first-try win',
-                                                    ),
-                                                    content: Text(
-                                                      'Confirm that "$guess" is the correct word?',
-                                                    ),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        isDefaultAction: false,
-                                                        onPressed: () =>
-                                                            Navigator.of(
-                                                              ctx,
-                                                            ).pop(false),
-                                                        child: const Text(
-                                                          'Cancel',
-                                                        ),
-                                                      ),
-                                                      CupertinoDialogAction(
-                                                        isDefaultAction: true,
-                                                        onPressed: () =>
-                                                            Navigator.of(
-                                                              ctx,
-                                                            ).pop(true),
-                                                        child: const Text(
-                                                          'Confirm',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                            ) ??
-                                            false;
-                                      } else {
-                                        proceed =
-                                            await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  'Confirm first-try win',
-                                                ),
-                                                content: Text(
-                                                  'Confirm that "$guess" is the correct word?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(false),
-                                                    child: const Text('Cancel'),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(true),
-                                                    child: const Text(
-                                                      'Confirm',
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ) ??
-                                            false;
-                                      }
+                                      final proceed = await _confirmFirstTryWin(
+                                        context,
+                                        guess,
+                                      );
                                       if (!proceed || !context.mounted) return;
                                       controller.confirmWin();
                                       return;
@@ -1160,6 +1090,52 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
         );
       },
     );
+  }
+}
+
+// Platform-aware first-try win confirmation dialog
+Future<bool> _confirmFirstTryWin(BuildContext context, String guess) async {
+  final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+  if (isIOS) {
+    return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('Confirm first-try win'),
+            content: Text('Confirm that "$guess" is the correct word?'),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: false,
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  } else {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Confirm first-try win'),
+            content: Text('Confirm that "$guess" is the correct word?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
 
