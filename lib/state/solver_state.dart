@@ -382,20 +382,22 @@ class SolverController extends StateNotifier<SolverUiState> {
   // Move selection one editable tile to the left, skipping non-editable locks.
   void moveSelectionLeft() {
     if (state.grid.isEmpty || state.grid.last.isEmpty) return;
-    final currentSelected = state.selectedIndex ?? 0;
-    final prev = findPrevEditableIndex(currentSelected);
-    if (prev != null) {
-      state = state.copyWith(selectedIndex: prev);
+    final currentRow = state.grid.last;
+    int idx = state.selectedIndex ?? 0;
+    if (idx < 0 || idx >= currentRow.length) idx = 0;
+    if (idx > 0) {
+      state = state.copyWith(selectedIndex: idx - 1);
     }
   }
 
   // Move selection one editable tile to the right, skipping non-editable locks.
   void moveSelectionRight() {
     if (state.grid.isEmpty || state.grid.last.isEmpty) return;
-    final currentSelected = state.selectedIndex ?? -1;
-    final next = findNextEditableIndex(currentSelected);
-    if (next != null) {
-      state = state.copyWith(selectedIndex: next);
+    final currentRow = state.grid.last;
+    int idx = state.selectedIndex ?? -1;
+    if (idx < -1 || idx >= currentRow.length) idx = -1;
+    if (idx < currentRow.length - 1) {
+      state = state.copyWith(selectedIndex: idx + 1);
     }
   }
 
@@ -504,6 +506,8 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
       unlockPrefixThisRow: false,
+      // Prevent any carry-forward on the next append after a dictionary reset
+      suppressCarryForwardOnce: true,
     );
   }
 
@@ -813,6 +817,12 @@ class SolverController extends StateNotifier<SolverUiState> {
       selectedIndex: target.length - 1,
       errorMessage: null,
     );
+    // After confirming win, start a fresh board for a new game while preserving
+    // current word length and dictionary, and clearing prefix and carry-forward.
+    // This avoids stale memory affecting the next game.
+    Future.microtask(() {
+      setWordLength(state.config.wordLength);
+    });
   }
 
   // Validate that the current row's word is consistent with all previous

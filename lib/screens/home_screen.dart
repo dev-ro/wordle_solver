@@ -52,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
-                // Arrow navigation always allowed
+                // Arrow navigation always allowed (may land on green tiles)
                 if (key == LogicalKeyboardKey.arrowLeft) {
                   controller.moveSelectionLeft();
                   return;
