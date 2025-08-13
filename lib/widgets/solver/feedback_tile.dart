@@ -204,6 +204,7 @@ class _FeedbackTileState extends State<FeedbackTile> {
           _controller.text = _sentinel;
           _controller.selection = const TextSelection.collapsed(offset: 1);
           _isSettingText = false;
+          // Do not advance focus when invoking a color shortcut
           return;
         }
         // Take last alpha character

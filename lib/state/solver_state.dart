@@ -590,12 +590,13 @@ class SolverController extends StateNotifier<SolverUiState> {
       return;
     }
     final current = row[colIndex];
-    // Toggle: requesting the same color again reverts to black
+    // Toggle: requesting the same color again reverts to black (stay on same index)
     final nextColor = (current.feedback == feedback)
         ? TileFeedback.black
         : feedback;
     _updateTile(colIndex, feedback: nextColor);
     state = state.copyWith(
+      // Keep selection pinned to this index when toggling via shortcut
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
     );
@@ -615,12 +616,13 @@ class SolverController extends StateNotifier<SolverUiState> {
     int idx = state.selectedIndex ?? 0;
     final currentRow = state.grid.last;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
-    // If the selected tile has no letter, try to color the last non-empty tile.
-    // Prefer editable, but if none (e.g., it's green), fall back to any non-empty index.
+    // If the selected tile has no letter, target the most recent non-empty
+    // tile regardless of editability to avoid walking backwards across tiles
+    // when repeatedly applying the same shortcut color.
     if (currentRow[idx].letter.isEmpty) {
-      int? prev = findLastEditableNonEmptyIndex();
-      prev ??= _findLastNonEmptyIndexIgnoringLocks();
-      if (prev != null) idx = prev;
+      int? target = _findLastNonEmptyIndexIgnoringLocks();
+      target ??= findLastEditableNonEmptyIndex();
+      if (target != null) idx = target;
     }
     // If still no letter to color, do nothing
     if (currentRow[idx].letter.isEmpty) return;
@@ -636,7 +638,7 @@ class SolverController extends StateNotifier<SolverUiState> {
     final nextColor = (current.feedback == feedback)
         ? TileFeedback.black
         : feedback;
-    // Apply feedback without moving selection so typing continues to the next tile
+    // Apply feedback without moving selection so repeated shortcuts don't walk tiles
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
 
