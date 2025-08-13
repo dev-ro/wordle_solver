@@ -383,7 +383,7 @@ class SolverController extends StateNotifier<SolverUiState> {
   void moveSelectionLeft() {
     if (state.grid.isEmpty || state.grid.last.isEmpty) return;
     final currentSelected = state.selectedIndex ?? 0;
-    final prev = findPrevEditableIndex(currentSelected + 1);
+    final prev = findPrevEditableIndex(currentSelected);
     if (prev != null) {
       state = state.copyWith(selectedIndex: prev);
     }

@@ -183,7 +183,8 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
         animation: _glowCtrl!,
         builder: (context, _) {
           // Rebuild the outer container so BoxShadow alpha updates
-          return MouseRegion(
+          return RepaintBoundary(
+            child: MouseRegion(
             onEnter: (_) => setState(() => _hovered = true),
             onExit: (_) => setState(() => _hovered = false),
             child: GestureDetector(
@@ -228,6 +229,7 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
                 ),
               ),
             ),
+          ),
           );
         },
       );
