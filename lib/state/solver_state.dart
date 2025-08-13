@@ -827,8 +827,14 @@ class SolverController extends StateNotifier<SolverUiState> {
 
     // Fast path: if we already have remaining candidates, check membership
     final existingRemaining = state.lastResponse?.remainingWords;
+    final existingRecommended = state.lastResponse?.recommendations
+        .map((r) => r.word)
+        .toList(growable: false);
     if (existingRemaining != null && existingRemaining.isNotEmpty) {
-      return existingRemaining.contains(guess);
+      if (existingRemaining.contains(guess)) return true;
+      if (existingRecommended != null && existingRecommended.contains(guess)) {
+        return true;
+      }
     }
 
     // Otherwise, compute candidates based on prior history only (exclude current row)
@@ -838,7 +844,9 @@ class SolverController extends StateNotifier<SolverUiState> {
         config: state.config,
         history: history,
       );
-      return response.remainingWords.contains(guess);
+      if (response.remainingWords.contains(guess)) return true;
+      final recWords = response.recommendations.map((r) => r.word);
+      return recWords.contains(guess);
     } catch (_) {
       return false;
     }

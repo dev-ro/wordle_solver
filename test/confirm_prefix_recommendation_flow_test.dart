@@ -50,4 +50,15 @@ void main() {
       expect(isComplete, true);
     },
   );
+
+  test('canConfirm accepts words present in recommendations', () async {
+    final ctrl = SolverController(repository: _FakeRepo());
+    ctrl.setWordLength(5);
+    ctrl.setPrefix('a');
+    // Simulate a response where ALIGN is recommended/remaining
+    await ctrl.requestRecommendationsWithoutConsuming();
+    ctrl.applyWordToCurrentRow('align');
+    final ok = await ctrl.canConfirmWinWithCurrentRowWord();
+    expect(ok, true);
+  });
 }
