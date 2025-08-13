@@ -52,11 +52,6 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
-                final tileFocused = ref.read(tileFocusActiveProvider);
-                if (tileFocused) {
-                  // Let row-level/tile handle all keys when a tile is focused
-                  return;
-                }
                 // Arrow navigation always allowed
                 if (key == LogicalKeyboardKey.arrowLeft) {
                   controller.moveSelectionLeft();
@@ -64,6 +59,11 @@ class HomeScreen extends ConsumerWidget {
                 }
                 if (key == LogicalKeyboardKey.arrowRight) {
                   controller.moveSelectionRight();
+                  return;
+                }
+                final tileFocused = ref.read(tileFocusActiveProvider);
+                if (tileFocused) {
+                  // Let row-level/tile handle other keys when a tile is focused
                   return;
                 }
                 // Numeric shortcuts for feedback colors and reset
