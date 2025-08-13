@@ -551,29 +551,29 @@ class _GridSectionState extends State<_GridSection> {
               ),
               const SizedBox(height: 6),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Prefix action button
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final hasPrefix = (state.config.prefix ?? '').isNotEmpty;
-                      final label = hasPrefix
-                          ? 'Clear: ${(state.config.prefix ?? '').toUpperCase()}'
-                          : 'Prefix';
-                      final tooltip = hasPrefix
-                          ? 'Clear the deduced prefix and unlock first tile'
-                          : 'The first green letter (prefix) deduced after your first green';
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Tooltip(
+              LayoutBuilder(
+                builder: (context, c) {
+                  const spacing = 8.0;
+                  // Build action buttons list once
+                  final buttons = <Widget>[
+                    // Prefix action button
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final hasPrefix =
+                            (state.config.prefix ?? '').isNotEmpty;
+                        final label = hasPrefix
+                            ? 'Clear: ${(state.config.prefix ?? '').toUpperCase()}'
+                            : 'Prefix';
+                        final tooltip = hasPrefix
+                            ? 'Clear the deduced prefix and unlock first tile'
+                            : 'The first green letter (prefix) deduced after your first green';
+                        return Tooltip(
                           message: tooltip,
                           child: ElevatedButton.icon(
                             style: compactButtonStyle,
                             onPressed: hasPrefix
                                 ? () {
                                     controller.clearPrefix();
-                                    // Return keyboard handling to grid
                                     final focusNode = ref.read(
                                       gridKeyboardFocusNodeProvider,
                                     );
@@ -588,128 +588,54 @@ class _GridSectionState extends State<_GridSection> {
                             ),
                             label: Text(label, style: labelTextStyle),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  Builder(
-                    builder: (context) {
-                      // Determine eligibility for Confirm
-                      final current = state.grid.isNotEmpty
-                          ? state.grid.last
-                          : const <SolverTile>[];
-                      final isComplete =
-                          !state.isLoading &&
-                          current.isNotEmpty &&
-                          !current.any((t) => t.letter.isEmpty);
-                      final guess = current.isNotEmpty
-                          ? current.map((t) => t.letter).join()
-                          : '';
-                      final remaining =
-                          state.lastResponse?.remainingWords ??
-                          const <String>[];
-                      final hasHistory = state.grid.length > 1;
-                      final isInRemaining = remaining.contains(guess);
-                      final canConfirm =
-                          isComplete &&
-                          (isInRemaining || (!hasHistory && guess.isNotEmpty));
+                        );
+                      },
+                    ),
+                    // Confirm button
+                    Builder(
+                      builder: (context) {
+                        final current = state.grid.isNotEmpty
+                            ? state.grid.last
+                            : const <SolverTile>[];
+                        final isComplete =
+                            !state.isLoading &&
+                            current.isNotEmpty &&
+                            !current.any((t) => t.letter.isEmpty);
+                        final guess = current.isNotEmpty
+                            ? current.map((t) => t.letter).join()
+                            : '';
+                        final remaining =
+                            state.lastResponse?.remainingWords ??
+                            const <String>[];
+                        final hasHistory = state.grid.length > 1;
+                        final isInRemaining = remaining.contains(guess);
+                        final canConfirm =
+                            isComplete &&
+                            (isInRemaining ||
+                                (!hasHistory && guess.isNotEmpty));
 
-                      final tooltipMsg = canConfirm
-                          ? (!hasHistory && !isInRemaining
-                                ? 'Confirm first-try win'
-                                : 'Confirm win with current word')
-                          : 'Enter a complete valid word to enable Confirm';
+                        final tooltipMsg = canConfirm
+                            ? (!hasHistory && !isInRemaining
+                                  ? 'Confirm first-try win'
+                                  : 'Confirm win with current word')
+                            : 'Enter a complete valid word to enable Confirm';
 
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Tooltip(
+                        return Tooltip(
                           message: tooltipMsg,
                           child: ElevatedButton.icon(
                             style: compactButtonStyle,
                             onPressed: canConfirm
                                 ? () async {
                                     if (!hasHistory && !isInRemaining) {
-                                      // First guess scenario: ask user to confirm
-                                      final isIOS =
-                                          Theme.of(context).platform ==
-                                          TargetPlatform.iOS;
-                                      bool proceed = false;
-                                      if (isIOS) {
-                                        proceed =
-                                            await showCupertinoDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) =>
-                                                  CupertinoAlertDialog(
-                                                    title: const Text(
-                                                      'Confirm first-try win',
-                                                    ),
-                                                    content: Text(
-                                                      'Confirm that "$guess" is the correct word?',
-                                                    ),
-                                                    actions: [
-                                                      CupertinoDialogAction(
-                                                        isDefaultAction: false,
-                                                        onPressed: () =>
-                                                            Navigator.of(
-                                                              ctx,
-                                                            ).pop(false),
-                                                        child: const Text(
-                                                          'Cancel',
-                                                        ),
-                                                      ),
-                                                      CupertinoDialogAction(
-                                                        isDefaultAction: true,
-                                                        onPressed: () =>
-                                                            Navigator.of(
-                                                              ctx,
-                                                            ).pop(true),
-                                                        child: const Text(
-                                                          'Confirm',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                            ) ??
-                                            false;
-                                      } else {
-                                        proceed =
-                                            await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  'Confirm first-try win',
-                                                ),
-                                                content: Text(
-                                                  'Confirm that "$guess" is the correct word?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(false),
-                                                    child: const Text('Cancel'),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(
-                                                          ctx,
-                                                        ).pop(true),
-                                                    child: const Text(
-                                                      'Confirm',
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ) ??
-                                            false;
-                                      }
+                                      final proceed = await _confirmFirstTryWin(
+                                        context,
+                                        guess,
+                                      );
                                       if (!proceed || !context.mounted) return;
                                       controller.confirmWin();
                                       return;
                                     }
 
-                                    // Regular validation against remaining candidates/history
                                     final ok = await controller
                                         .canConfirmWinWithCurrentRowWord();
                                     if (!context.mounted) return;
@@ -737,136 +663,160 @@ class _GridSectionState extends State<_GridSection> {
                             ),
                             label: Text('Confirm', style: labelTextStyle),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final fillerCtrl = ref.read(
-                        fillerControllerProvider.notifier,
-                      );
-                      return Tooltip(
-                        message: 'Start a new game (reset board)',
-                        child: ElevatedButton.icon(
-                          style: compactButtonStyle,
-                          onPressed: state.isLoading
-                              ? null
-                              : () {
-                                  controller.resetGame();
-                                  // Clear filler query to reset the filler words list/UI
-                                  fillerCtrl.setQuery('', config: state.config);
-                                },
-                          icon: Icon(Icons.refresh, size: isNarrow ? 18 : null),
-                          label: Text('New', style: labelTextStyle),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final fillerCtrl = ref.read(
-                        fillerControllerProvider.notifier,
-                      );
-                      // Gating: small candidate set and only 1–2 variable positions
-                      final remainingCount =
-                          state.lastResponse?.remainingCount ?? 999;
-                      final varPosCount =
-                          state.lastResponse?.variablePositions.length ?? 99;
-                      final canSuggest =
-                          (remainingCount <= 20) &&
-                          (varPosCount >= 1 && varPosCount <= 2);
-                      final tooltip = canSuggest
-                          ? 'Auto-suggest filler words based on remaining candidates'
-                          : 'Enabled when remaining words <= 20 and 1–2 variable positions remain';
-                      return Tooltip(
-                        message: tooltip,
-                        child: ElevatedButton.icon(
-                          style: compactButtonStyle,
-                          onPressed: state.isLoading || !canSuggest
-                              ? null
-                              : () async {
-                                  final remaining =
-                                      state.lastResponse?.remainingWords ??
-                                      const <String>[];
-                                  await fillerCtrl.computeAutoSuggest(
-                                    config: state.config,
-                                    remainingCandidates: remaining,
-                                  );
-                                  // Populate manual search field with suggested variable letters
-                                  final letters = ref
-                                      .read(fillerControllerProvider.notifier)
-                                      .lastAutoSuggestLetters;
-                                  fillerCtrl.setQuery(
-                                    letters,
-                                    config: state.config,
-                                  );
-                                },
-                          icon: Icon(
-                            Icons.auto_awesome,
-                            size: isNarrow ? 18 : null,
+                        );
+                      },
+                    ),
+                    // New button
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final fillerCtrl = ref.read(
+                          fillerControllerProvider.notifier,
+                        );
+                        return Tooltip(
+                          message: 'Start a new game (reset board)',
+                          child: ElevatedButton.icon(
+                            style: compactButtonStyle,
+                            onPressed: state.isLoading
+                                ? null
+                                : () {
+                                    controller.resetGame();
+                                    fillerCtrl.setQuery(
+                                      '',
+                                      config: state.config,
+                                    );
+                                  },
+                            icon: Icon(
+                              Icons.refresh,
+                              size: isNarrow ? 18 : null,
+                            ),
+                            label: Text('New', style: labelTextStyle),
                           ),
-                          label: Text('Suggest', style: labelTextStyle),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  Builder(
-                    builder: (context) {
-                      final current = state.grid.isNotEmpty
-                          ? state.grid.last
-                          : const <SolverTile>[];
-                      final canSubmit =
-                          !state.isLoading &&
-                          current.isNotEmpty &&
-                          !current.any((t) => t.letter.isEmpty);
-                      return Tooltip(
-                        message: canSubmit
-                            ? 'Submit current guess (Enter)'
-                            : 'Enter a complete word to enable Submit',
-                        child: Consumer(
-                          builder: (context, ref, _) {
-                            final fillerCtrl = ref.read(
-                              fillerControllerProvider.notifier,
-                            );
-                            return ElevatedButton.icon(
-                              style: compactButtonStyle,
-                              onPressed: canSubmit
-                                  ? () => _gridSubmitWithFeedbackCheck(
-                                      context,
-                                      state,
-                                      controller,
-                                      onNewGame: () {
-                                        controller.resetGame();
-                                        fillerCtrl.setQuery(
-                                          '',
-                                          config: state.config,
-                                        );
-                                      },
-                                    )
-                                  : null,
-                              icon: state.isLoading
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                        );
+                      },
+                    ),
+                    // Suggest button
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final fillerCtrl = ref.read(
+                          fillerControllerProvider.notifier,
+                        );
+                        final remainingCount =
+                            state.lastResponse?.remainingCount ?? 999;
+                        final varPosCount =
+                            state.lastResponse?.variablePositions.length ?? 99;
+                        final canSuggest =
+                            (remainingCount <= 20) &&
+                            (varPosCount >= 1 && varPosCount <= 2);
+                        final tooltip = canSuggest
+                            ? 'Auto-suggest filler words based on remaining candidates'
+                            : 'Enabled when remaining words <= 20 and 1–2 variable positions remain';
+                        return Tooltip(
+                          message: tooltip,
+                          child: ElevatedButton.icon(
+                            style: compactButtonStyle,
+                            onPressed: state.isLoading || !canSuggest
+                                ? null
+                                : () async {
+                                    final remaining =
+                                        state.lastResponse?.remainingWords ??
+                                        const <String>[];
+                                    await fillerCtrl.computeAutoSuggest(
+                                      config: state.config,
+                                      remainingCandidates: remaining,
+                                    );
+                                    final letters = ref
+                                        .read(fillerControllerProvider.notifier)
+                                        .lastAutoSuggestLetters;
+                                    fillerCtrl.setQuery(
+                                      letters,
+                                      config: state.config,
+                                    );
+                                  },
+                            icon: Icon(
+                              Icons.auto_awesome,
+                              size: isNarrow ? 18 : null,
+                            ),
+                            label: Text('Suggest', style: labelTextStyle),
+                          ),
+                        );
+                      },
+                    ),
+                    // Submit button
+                    Builder(
+                      builder: (context) {
+                        final current = state.grid.isNotEmpty
+                            ? state.grid.last
+                            : const <SolverTile>[];
+                        final canSubmit =
+                            !state.isLoading &&
+                            current.isNotEmpty &&
+                            !current.any((t) => t.letter.isEmpty);
+                        return Tooltip(
+                          message: canSubmit
+                              ? 'Submit current guess (Enter)'
+                              : 'Enter a complete word to enable Submit',
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final fillerCtrl = ref.read(
+                                fillerControllerProvider.notifier,
+                              );
+                              return ElevatedButton.icon(
+                                style: compactButtonStyle,
+                                onPressed: canSubmit
+                                    ? () => _gridSubmitWithFeedbackCheck(
+                                        context,
+                                        state,
+                                        controller,
+                                        onNewGame: () {
+                                          controller.resetGame();
+                                          fillerCtrl.setQuery(
+                                            '',
+                                            config: state.config,
+                                          );
+                                        },
+                                      )
+                                    : null,
+                                icon: state.isLoading
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.send_rounded,
+                                        size: isNarrow ? 18 : null,
                                       ),
-                                    )
-                                  : Icon(
-                                      Icons.send_rounded,
-                                      size: isNarrow ? 18 : null,
-                                    ),
-                              label: Text('Submit', style: labelTextStyle),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                                label: Text('Submit', style: labelTextStyle),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ];
+
+                  final children = isNarrow
+                      ? buttons
+                            .map(
+                              (w) => SizedBox(
+                                width: (c.maxWidth - spacing * 2) / 3,
+                                child: w,
+                              ),
+                            )
+                            .toList()
+                      : buttons;
+
+                  return Wrap(
+                    alignment: isNarrow
+                        ? WrapAlignment.center
+                        : WrapAlignment.end,
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: children,
+                  );
+                },
               ),
               if (state.errorMessage != null) ...[
                 const SizedBox(height: 8),
@@ -1140,6 +1090,52 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
         );
       },
     );
+  }
+}
+
+// Platform-aware first-try win confirmation dialog
+Future<bool> _confirmFirstTryWin(BuildContext context, String guess) async {
+  final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+  if (isIOS) {
+    return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('Confirm first-try win'),
+            content: Text('Confirm that "$guess" is the correct word?'),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: false,
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  } else {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Confirm first-try win'),
+            content: Text('Confirm that "$guess" is the correct word?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
 
