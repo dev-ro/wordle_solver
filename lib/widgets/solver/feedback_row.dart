@@ -17,6 +17,9 @@ class FeedbackRow extends StatelessWidget {
   final ValueChanged<bool>? onTileFocusChange;
   final void Function(int index, int digit)? onDigitShortcut;
   final VoidCallback? onBackspaceAtEmpty;
+  // Optional arrow navigation callbacks (used when a tile has focus)
+  final VoidCallback? onArrowLeft;
+  final VoidCallback? onArrowRight;
 
   const FeedbackRow({
     super.key,
@@ -33,6 +36,8 @@ class FeedbackRow extends StatelessWidget {
     this.onTileFocusChange,
     this.onDigitShortcut,
     this.onBackspaceAtEmpty,
+    this.onArrowLeft,
+    this.onArrowRight,
   });
 
   @override

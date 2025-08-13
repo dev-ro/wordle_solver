@@ -62,6 +62,8 @@ class AuroraHoverTile extends StatefulWidget {
   final VoidCallback? onTap;
   final Color?
   borderColorOverride; // when provided, use solid color border instead of gradient
+  final Gradient? borderGradientOverride; // metallic gradient override
+  final bool animatedGlow; // subtle pulsing glow
 
   const AuroraHoverTile({
     super.key,
@@ -72,15 +74,38 @@ class AuroraHoverTile extends StatefulWidget {
     this.emphasize = false,
     this.onTap,
     this.borderColorOverride,
+    this.borderGradientOverride,
+    this.animatedGlow = false,
   });
 
   @override
   State<AuroraHoverTile> createState() => _AuroraHoverTileState();
 }
 
-class _AuroraHoverTileState extends State<AuroraHoverTile> {
+class _AuroraHoverTileState extends State<AuroraHoverTile>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
   bool _pressed = false;
+  late final AnimationController _glowCtrl;
+  late final Animation<double> _glowTween;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _glowTween = Tween<double>(begin: 0.16, end: 0.34).animate(
+      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _glowCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +113,7 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
     final hoverScale = _hovered ? 1.05 : 1.0;
     final pressScale = _pressed ? 0.98 : 1.0;
 
-    return MouseRegion(
+    Widget content = MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
@@ -101,19 +126,17 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
           scale: baseScale * hoverScale * pressScale,
           child: Container(
             decoration: BoxDecoration(
-              color: widget.borderColorOverride,
-              gradient: widget.borderColorOverride == null
-                  ? kAuroraGradient
+              color: widget.borderGradientOverride == null
+                  ? widget.borderColorOverride
                   : null,
+              gradient: widget.borderGradientOverride ??
+                  (widget.borderColorOverride == null ? kAuroraGradient : null),
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: (widget.borderColorOverride ?? const Color(0xFF89CFF0))
-                      .withValues(
-                        alpha: widget.emphasize
-                            ? 0.35
-                            : (_hovered ? 0.3 : 0.18),
-                      ),
+                  color: _shadowColor().withValues(
+                    alpha: _shadowAlpha(),
+                  ),
                   blurRadius: widget.emphasize ? 22 : 16,
                   spreadRadius: 1,
                 ),
@@ -134,6 +157,38 @@ class _AuroraHoverTileState extends State<AuroraHoverTile> {
         ),
       ),
     );
+
+    if (widget.animatedGlow) {
+      content = AnimatedBuilder(
+        animation: _glowCtrl,
+        builder: (context, child) => child!,
+        child: content,
+      );
+    }
+
+    return content;
+  }
+
+  Color _shadowColor() {
+    if (widget.borderColorOverride != null) {
+      return widget.borderColorOverride!;
+    }
+    if (widget.borderGradientOverride != null) {
+      final colors = widget.borderGradientOverride is LinearGradient
+          ? (widget.borderGradientOverride as LinearGradient).colors
+          : (widget.borderGradientOverride as Gradient).colors;
+      return colors.isNotEmpty ? colors.first : const Color(0xFF89CFF0);
+    }
+    return const Color(0xFF89CFF0);
+  }
+
+  double _shadowAlpha() {
+    if (!widget.animatedGlow) {
+      return widget.emphasize ? 0.35 : (_hovered ? 0.3 : 0.18);
+    }
+    // Blend animated glow with hover/emphasis for subtle motion
+    final base = widget.emphasize ? 0.22 : (_hovered ? 0.20 : 0.16);
+    return (_glowTween.value).clamp(base, 0.38);
   }
 }
 

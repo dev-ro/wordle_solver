@@ -73,12 +73,48 @@ class RecommendationsPanel extends StatelessWidget {
                 if (uniqueScores.length == 3) break;
               }
 
-              Color borderColorFor(double score) {
+              Gradient? gradientFor(double score) {
                 final idx = uniqueScores.indexOf(score);
-                if (idx == 0) return const Color(0xFFFFD700); // gold
-                if (idx == 1) return const Color(0xFFC0C0C0); // silver
-                if (idx == 2) return const Color(0xFFCD7F32); // bronze
-                return Colors.white24; // default
+                if (idx == 0) {
+                  // Gold metallic gradient
+                  return const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFA57C00),
+                      Color(0xFFFFD700),
+                      Color(0xFFFFF1B5),
+                      Color(0xFFA57C00),
+                    ],
+                  );
+                }
+                if (idx == 1) {
+                  // Silver metallic gradient
+                  return const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF8A8A8A),
+                      Color(0xFFC0C0C0),
+                      Color(0xFFEDEDED),
+                      Color(0xFF8A8A8A),
+                    ],
+                  );
+                }
+                if (idx == 2) {
+                  // Bronze metallic gradient
+                  return const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6E3F1F),
+                      Color(0xFFCD7F32),
+                      Color(0xFFE8C29B),
+                      Color(0xFF6E3F1F),
+                    ],
+                  );
+                }
+                return null;
               }
 
               // Compute a responsive childAspectRatio to ensure a flatter, horizontal rectangle.
@@ -129,10 +165,12 @@ class RecommendationsPanel extends StatelessWidget {
                 itemCount: topCount,
                 itemBuilder: (context, index) {
                   final r = recs[index];
+                  final grad = gradientFor(r.score);
                   return AuroraHoverTile(
                     emphasize: index == 0,
                     onTap: () => onSelectWord(r.word),
-                    borderColorOverride: borderColorFor(r.score),
+                    borderGradientOverride: grad,
+                    animatedGlow: grad != null,
                     // Tighter vertical padding for more rectangular look
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,

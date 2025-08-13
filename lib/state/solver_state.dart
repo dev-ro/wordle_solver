@@ -152,24 +152,23 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void setWordLength(int length) {
-    final clamped = length < 3 ? 3 : (length > 20 ? 20 : length);
+    final clamped = length < 3 ? 3 : (length > 15 ? 15 : length);
+    // New game semantics for length change: clear prefix and fully reset board/memory
+    final newConfig = SolverConfig(
+      wordLength: clamped,
+      prefix: null,
+      dictionary: state.config.dictionary,
+      autoCopyOnSelect: state.config.autoCopyOnSelect,
+    );
     final newRow = List.generate(
       clamped,
       (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
     );
-    // If we have a 1-char prefix, auto-populate first tile for the current row
-    final p = state.config.prefix;
-    if (p != null && p.isNotEmpty) {
-      newRow[0] = newRow[0].copyWith(
-        letter: p[0].toLowerCase(),
-        feedback: TileFeedback.green,
-      );
-    }
     final newGrid = [newRow];
     // Invalidate any in-flight computations tied to the previous board
     _requestToken++;
     state = state.copyWith(
-      config: state.config.copyWith(wordLength: clamped),
+      config: newConfig,
       grid: newGrid,
       lastResponse: null,
       isLoading: false,
@@ -178,6 +177,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
       unlockPrefixThisRow: false,
+      suppressCarryForwardOnce: true,
     );
 
     // Debounce recommendation recompute while sliding the length control
@@ -377,6 +377,26 @@ class SolverController extends StateNotifier<SolverUiState> {
     _updateTile(idx, letter: '', feedback: TileFeedback.black);
     final prev = (idx - 1).clamp(0, currentRow.length - 1);
     state = state.copyWith(selectedIndex: prev);
+  }
+
+  // Move selection one editable tile to the left, skipping non-editable locks.
+  void moveSelectionLeft() {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    final currentSelected = state.selectedIndex ?? 0;
+    final prev = findPrevEditableIndex(currentSelected + 1);
+    if (prev != null) {
+      state = state.copyWith(selectedIndex: prev);
+    }
+  }
+
+  // Move selection one editable tile to the right, skipping non-editable locks.
+  void moveSelectionRight() {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    final currentSelected = state.selectedIndex ?? -1;
+    final next = findNextEditableIndex(currentSelected);
+    if (next != null) {
+      state = state.copyWith(selectedIndex: next);
+    }
   }
 
   // Overwrite letter at an exact index from tile input.
