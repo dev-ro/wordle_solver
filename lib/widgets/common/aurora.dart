@@ -86,12 +86,38 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
     with SingleTickerProviderStateMixin {
   bool _hovered = false;
   bool _pressed = false;
-  late final AnimationController _glowCtrl;
-  late final Animation<double> _glowTween;
+  AnimationController? _glowCtrl;
+  Animation<double>? _glowTween;
 
   @override
   void initState() {
     super.initState();
+    if (widget.animatedGlow) {
+      _initGlow();
+    }
+  }
+
+  @override
+  void dispose() {
+    _glowCtrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AuroraHoverTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.animatedGlow && widget.animatedGlow) {
+      _initGlow();
+    } else if (oldWidget.animatedGlow && !widget.animatedGlow) {
+      _glowCtrl?.stop();
+      _glowCtrl?.dispose();
+      _glowCtrl = null;
+      _glowTween = null;
+    }
+  }
+
+  void _initGlow() {
+    _glowCtrl?.dispose();
     _glowCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
@@ -99,13 +125,7 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
     _glowTween = Tween<double>(
       begin: 0.16,
       end: 0.34,
-    ).animate(CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _glowCtrl.dispose();
-    super.dispose();
+    ).animate(CurvedAnimation(parent: _glowCtrl!, curve: Curves.easeInOut));
   }
 
   @override
@@ -158,9 +178,9 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
       ),
     );
 
-    if (widget.animatedGlow) {
+    if (widget.animatedGlow && _glowCtrl != null) {
       content = AnimatedBuilder(
-        animation: _glowCtrl,
+        animation: _glowCtrl!,
         builder: (context, child) => child!,
         child: content,
       );
@@ -183,12 +203,12 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
   }
 
   double _shadowAlpha() {
-    if (!widget.animatedGlow) {
+    if (!widget.animatedGlow || _glowTween == null) {
       return widget.emphasize ? 0.35 : (_hovered ? 0.3 : 0.18);
     }
     // Blend animated glow with hover/emphasis for subtle motion
     final base = widget.emphasize ? 0.22 : (_hovered ? 0.20 : 0.16);
-    return (_glowTween.value).clamp(base, 0.38);
+    return (_glowTween!.value).clamp(base, 0.38);
   }
 }
 

@@ -57,7 +57,7 @@ class HomeScreen extends ConsumerWidget {
                   // Let row-level/tile handle all keys when a tile is focused
                   return;
                 }
-                // Arrow navigation when no tile is focused
+                // Arrow navigation always allowed
                 if (key == LogicalKeyboardKey.arrowLeft) {
                   controller.moveSelectionLeft();
                   return;
