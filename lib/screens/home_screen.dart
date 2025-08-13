@@ -606,11 +606,18 @@ class _GridSectionState extends State<_GridSection> {
                         final remaining =
                             state.lastResponse?.remainingWords ??
                             const <String>[];
+                        final recommended =
+                            state.lastResponse?.recommendations
+                                .map((r) => r.word)
+                                .toList(growable: false) ??
+                            const <String>[];
                         final hasHistory = state.grid.length > 1;
                         final isInRemaining = remaining.contains(guess);
+                        final isInRecommended = recommended.contains(guess);
                         final canConfirm =
                             isComplete &&
                             (isInRemaining ||
+                                isInRecommended ||
                                 (!hasHistory && guess.isNotEmpty));
 
                         final tooltipMsg = canConfirm
