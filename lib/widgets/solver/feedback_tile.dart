@@ -168,6 +168,7 @@ class _FeedbackTileState extends State<FeedbackTile> {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-3\u200B]')),
       ],
+      // Arrow keys handled at row level via Shortcuts/Actions
       onChanged: (v) {
         if (_isSettingText) return; // ignore programmatic updates
         // Normalize by removing sentinel
@@ -203,6 +204,7 @@ class _FeedbackTileState extends State<FeedbackTile> {
           _controller.text = _sentinel;
           _controller.selection = const TextSelection.collapsed(offset: 1);
           _isSettingText = false;
+          // Do not advance focus when invoking a color shortcut
           return;
         }
         // Take last alpha character

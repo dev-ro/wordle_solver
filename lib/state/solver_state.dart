@@ -152,24 +152,23 @@ class SolverController extends StateNotifier<SolverUiState> {
   }
 
   void setWordLength(int length) {
-    final clamped = length < 3 ? 3 : (length > 20 ? 20 : length);
+    final clamped = length < 4 ? 4 : (length > 15 ? 15 : length);
+    // New game semantics for length change: clear prefix and fully reset board/memory
+    final newConfig = SolverConfig(
+      wordLength: clamped,
+      prefix: null,
+      dictionary: state.config.dictionary,
+      autoCopyOnSelect: state.config.autoCopyOnSelect,
+    );
     final newRow = List.generate(
       clamped,
       (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
     );
-    // If we have a 1-char prefix, auto-populate first tile for the current row
-    final p = state.config.prefix;
-    if (p != null && p.isNotEmpty) {
-      newRow[0] = newRow[0].copyWith(
-        letter: p[0].toLowerCase(),
-        feedback: TileFeedback.green,
-      );
-    }
     final newGrid = [newRow];
     // Invalidate any in-flight computations tied to the previous board
     _requestToken++;
     state = state.copyWith(
-      config: state.config.copyWith(wordLength: clamped),
+      config: newConfig,
       grid: newGrid,
       lastResponse: null,
       isLoading: false,
@@ -178,6 +177,7 @@ class SolverController extends StateNotifier<SolverUiState> {
       currentRowFeedbackTouched: false,
       pendingGreenLocks: null,
       unlockPrefixThisRow: false,
+      suppressCarryForwardOnce: true,
     );
 
     // Debounce recommendation recompute while sliding the length control
@@ -379,6 +379,26 @@ class SolverController extends StateNotifier<SolverUiState> {
     state = state.copyWith(selectedIndex: prev);
   }
 
+  // Move selection one editable tile to the left, skipping non-editable locks.
+  void moveSelectionLeft() {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    final currentSelected = state.selectedIndex ?? 0;
+    final prev = findPrevEditableIndex(currentSelected);
+    if (prev != null) {
+      state = state.copyWith(selectedIndex: prev);
+    }
+  }
+
+  // Move selection one editable tile to the right, skipping non-editable locks.
+  void moveSelectionRight() {
+    if (state.grid.isEmpty || state.grid.last.isEmpty) return;
+    final currentSelected = state.selectedIndex ?? -1;
+    final next = findNextEditableIndex(currentSelected);
+    if (next != null) {
+      state = state.copyWith(selectedIndex: next);
+    }
+  }
+
   // Overwrite letter at an exact index from tile input.
   // - Always writes the provided letter regardless of feedback/prefix
   // - If the tile was green and the letter changes, reset feedback to black
@@ -570,12 +590,13 @@ class SolverController extends StateNotifier<SolverUiState> {
       return;
     }
     final current = row[colIndex];
-    // Toggle: requesting the same color again reverts to black
+    // Toggle: requesting the same color again reverts to black (stay on same index)
     final nextColor = (current.feedback == feedback)
         ? TileFeedback.black
         : feedback;
     _updateTile(colIndex, feedback: nextColor);
     state = state.copyWith(
+      // Keep selection pinned to this index when toggling via shortcut
       selectedIndex: colIndex,
       currentRowFeedbackTouched: true,
     );
@@ -595,12 +616,13 @@ class SolverController extends StateNotifier<SolverUiState> {
     int idx = state.selectedIndex ?? 0;
     final currentRow = state.grid.last;
     if (idx < 0 || idx >= currentRow.length) idx = 0;
-    // If the selected tile has no letter, try to color the last non-empty tile.
-    // Prefer editable, but if none (e.g., it's green), fall back to any non-empty index.
+    // If the selected tile has no letter, target the most recent non-empty
+    // tile regardless of editability to avoid walking backwards across tiles
+    // when repeatedly applying the same shortcut color.
     if (currentRow[idx].letter.isEmpty) {
-      int? prev = findLastEditableNonEmptyIndex();
-      prev ??= _findLastNonEmptyIndexIgnoringLocks();
-      if (prev != null) idx = prev;
+      int? target = _findLastNonEmptyIndexIgnoringLocks();
+      target ??= findLastEditableNonEmptyIndex();
+      if (target != null) idx = target;
     }
     // If still no letter to color, do nothing
     if (currentRow[idx].letter.isEmpty) return;
@@ -616,7 +638,7 @@ class SolverController extends StateNotifier<SolverUiState> {
     final nextColor = (current.feedback == feedback)
         ? TileFeedback.black
         : feedback;
-    // Apply feedback without moving selection so typing continues to the next tile
+    // Apply feedback without moving selection so repeated shortcuts don't walk tiles
     _updateTile(idx, feedback: nextColor);
     state = state.copyWith(currentRowFeedbackTouched: true);
 

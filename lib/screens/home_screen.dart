@@ -52,9 +52,18 @@ class HomeScreen extends ConsumerWidget {
                 if (event is! KeyDownEvent) return;
                 final key = event.logicalKey;
                 final keyLabel = key.keyLabel;
+                // Arrow navigation always allowed
+                if (key == LogicalKeyboardKey.arrowLeft) {
+                  controller.moveSelectionLeft();
+                  return;
+                }
+                if (key == LogicalKeyboardKey.arrowRight) {
+                  controller.moveSelectionRight();
+                  return;
+                }
                 final tileFocused = ref.read(tileFocusActiveProvider);
                 if (tileFocused) {
-                  // Let row-level/tile handle all keys when a tile is focused
+                  // Let row-level/tile handle other keys when a tile is focused
                   return;
                 }
                 // Numeric shortcuts for feedback colors and reset
@@ -253,70 +262,27 @@ class _TopControls extends ConsumerWidget {
                         context,
                       ).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
                       child: Slider(
-                        min: 3,
-                        max: 20,
+                        min: 4,
+                        max: 15,
                         // Remove divisions to hide internal ticks, but keep integer snapping
                         value: state.config.wordLength.toDouble(),
-                        onChanged: (v) =>
-                            controller.setWordLength(v.round().clamp(3, 20)),
+                        onChanged: (v) {
+                          final len = v.round().clamp(4, 15);
+                          controller.setWordLength(len);
+                          // Clear filler query as part of full reset semantics
+                          final newConfig = state.config.copyWith(
+                            wordLength: len,
+                            prefix: null,
+                          );
+                          fillerCtrl.setQuery('', config: newConfig);
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              // Prefix input removed: prefix is now deduced automatically
-              if ((state.config.prefix ?? '').isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF15151A).withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white24, width: 1),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Prefix: ${(state.config.prefix ?? '').toUpperCase()}',
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            const SizedBox(width: 8),
-                            Tooltip(
-                              message:
-                                  'Clear the deduced prefix and unlock first tile',
-                              child: TextButton.icon(
-                                onPressed: () => controller.clearPrefix(),
-                                icon: const Icon(Icons.clear, size: 16),
-                                label: const Text(
-                                  'Clear',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 0,
-                                  ),
-                                  minimumSize: const Size(0, 0),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              // Prefix chip removed; prefix control is now an action button below the board
               const SizedBox(width: 12),
               Flexible(
                 flex: 1,
@@ -588,6 +554,44 @@ class _GridSectionState extends State<_GridSection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  // Prefix action button
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final hasPrefix = (state.config.prefix ?? '').isNotEmpty;
+                      final label = hasPrefix
+                          ? 'Clear: ${(state.config.prefix ?? '').toUpperCase()}'
+                          : 'Prefix';
+                      final tooltip = hasPrefix
+                          ? 'Clear the deduced prefix and unlock first tile'
+                          : 'The first green letter (prefix) deduced after your first green';
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Tooltip(
+                          message: tooltip,
+                          child: ElevatedButton.icon(
+                            style: compactButtonStyle,
+                            onPressed: hasPrefix
+                                ? () {
+                                    controller.clearPrefix();
+                                    // Return keyboard handling to grid
+                                    final focusNode = ref.read(
+                                      gridKeyboardFocusNodeProvider,
+                                    );
+                                    FocusScope.of(
+                                      context,
+                                    ).requestFocus(focusNode);
+                                  }
+                                : null,
+                            icon: Icon(
+                              hasPrefix ? Icons.clear : Icons.font_download,
+                              size: isNarrow ? 18 : null,
+                            ),
+                            label: Text(label, style: labelTextStyle),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Builder(
                     builder: (context) {
                       // Determine eligibility for Confirm
@@ -1103,6 +1107,26 @@ class _FocusableFeedbackRowState extends State<_FocusableFeedbackRow> {
                 // and move the selection left (controller handles both behaviors).
                 ctrl.backspaceAtSelection();
                 // After controller updates selectedIndex, sync actual focus to that index.
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final idx =
+                      ref.read(solverControllerProvider).selectedIndex ?? 0;
+                  if (_nodes.isEmpty) return;
+                  final clamped = idx.clamp(0, _nodes.length - 1);
+                  _nodes[clamped].requestFocus();
+                });
+              },
+              onArrowLeft: () {
+                ctrl.moveSelectionLeft();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final idx =
+                      ref.read(solverControllerProvider).selectedIndex ?? 0;
+                  if (_nodes.isEmpty) return;
+                  final clamped = idx.clamp(0, _nodes.length - 1);
+                  _nodes[clamped].requestFocus();
+                });
+              },
+              onArrowRight: () {
+                ctrl.moveSelectionRight();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   final idx =
                       ref.read(solverControllerProvider).selectedIndex ?? 0;

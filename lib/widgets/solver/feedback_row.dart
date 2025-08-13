@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../state/solver_state.dart';
 import 'feedback_tile.dart';
@@ -17,6 +18,9 @@ class FeedbackRow extends StatelessWidget {
   final ValueChanged<bool>? onTileFocusChange;
   final void Function(int index, int digit)? onDigitShortcut;
   final VoidCallback? onBackspaceAtEmpty;
+  // Optional arrow navigation callbacks (used when a tile has focus)
+  final VoidCallback? onArrowLeft;
+  final VoidCallback? onArrowRight;
 
   const FeedbackRow({
     super.key,
@@ -33,6 +37,8 @@ class FeedbackRow extends StatelessWidget {
     this.onTileFocusChange,
     this.onDigitShortcut,
     this.onBackspaceAtEmpty,
+    this.onArrowLeft,
+    this.onArrowRight,
   });
 
   @override
@@ -51,36 +57,48 @@ class FeedbackRow extends StatelessWidget {
 
     return SizedBox(
       width: maxWidth,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: gap,
-        runSpacing: 0,
-        children: [
-          for (int i = 0; i < tiles.length; i++)
-            FeedbackTile(
-              letter: tiles[i].letter,
-              feedback: tiles[i].feedback,
-              // Single tap selects; double tap cycles colors; long-press focuses keyboard only
-              onTap: () => onSelect(i),
-              onLongPress: null,
-              onLetterChanged: (v) => onLetterChanged(i, v),
-              side: clampedSide.toDouble(),
-              focusNode: focusNodes[i],
-              onMoveNext: i < tiles.length - 1
-                  ? () => focusNodes[i + 1].requestFocus()
-                  : null,
-              onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
-              isPrefixLocked: lockFirstTile && i == 0,
-              isSelected: selectedIndex == i,
-              onDoubleTap: () => onDoubleTap(i),
-              onSubmit: onSubmit,
-              onFocusChange: onTileFocusChange,
-              onDigitShortcut: onDigitShortcut == null
-                  ? null
-                  : (d) => onDigitShortcut!(i, d),
-              onBackspaceAtEmpty: onBackspaceAtEmpty,
-            ),
-        ],
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+            onArrowLeft?.call();
+          },
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+            onArrowRight?.call();
+          },
+        },
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: gap,
+          runSpacing: 0,
+          children: [
+            for (int i = 0; i < tiles.length; i++)
+              FeedbackTile(
+                letter: tiles[i].letter,
+                feedback: tiles[i].feedback,
+                // Single tap selects; double tap cycles colors; long-press focuses keyboard only
+                onTap: () => onSelect(i),
+                onLongPress: null,
+                onLetterChanged: (v) => onLetterChanged(i, v),
+                side: clampedSide.toDouble(),
+                focusNode: focusNodes[i],
+                onMoveNext: i < tiles.length - 1
+                    ? () => focusNodes[i + 1].requestFocus()
+                    : null,
+                onMovePrev: i > 0
+                    ? () => focusNodes[i - 1].requestFocus()
+                    : null,
+                isPrefixLocked: lockFirstTile && i == 0,
+                isSelected: selectedIndex == i,
+                onDoubleTap: () => onDoubleTap(i),
+                onSubmit: onSubmit,
+                onFocusChange: onTileFocusChange,
+                onDigitShortcut: onDigitShortcut == null
+                    ? null
+                    : (d) => onDigitShortcut!(i, d),
+                onBackspaceAtEmpty: onBackspaceAtEmpty,
+              ),
+          ],
+        ),
       ),
     );
   }
