@@ -84,7 +84,9 @@ class FeedbackRow extends StatelessWidget {
                 onMoveNext: i < tiles.length - 1
                     ? () => focusNodes[i + 1].requestFocus()
                     : null,
-                onMovePrev: i > 0 ? () => focusNodes[i - 1].requestFocus() : null,
+                onMovePrev: i > 0
+                    ? () => focusNodes[i - 1].requestFocus()
+                    : null,
                 isPrefixLocked: lockFirstTile && i == 0,
                 isSelected: selectedIndex == i,
                 onDoubleTap: () => onDoubleTap(i),

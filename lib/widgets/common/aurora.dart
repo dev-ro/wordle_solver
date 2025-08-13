@@ -120,11 +120,11 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
     _glowCtrl?.dispose();
     _glowCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
     _glowTween = Tween<double>(
-      begin: 0.16,
-      end: 0.34,
+      begin: 0.10,
+      end: 0.55,
     ).animate(CurvedAnimation(parent: _glowCtrl!, curve: Curves.easeInOut));
   }
 
@@ -154,15 +154,15 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
                   widget.borderGradientOverride ??
                   (widget.borderColorOverride == null ? kAuroraGradient : null),
               borderRadius: BorderRadius.circular(widget.borderRadius),
-            boxShadow: [
-              BoxShadow(
-                color: _shadowColor().withOpacity(_shadowAlpha()),
-                blurRadius: widget.animatedGlow
-                    ? (widget.emphasize ? 26 : 20)
-                    : (widget.emphasize ? 22 : 16),
-                spreadRadius: widget.animatedGlow ? 2 : 1,
-              ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: _shadowColor().withOpacity(_shadowAlpha()),
+                  blurRadius: widget.animatedGlow
+                      ? (widget.emphasize ? 26 : 20)
+                      : (widget.emphasize ? 22 : 16),
+                  spreadRadius: widget.animatedGlow ? 2 : 1,
+                ),
+              ],
             ),
             child: Container(
               margin: EdgeInsets.all(widget.borderWidth),
@@ -187,53 +187,52 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
           // Rebuild the outer container so BoxShadow alpha updates
           return RepaintBoundary(
             child: MouseRegion(
-            onEnter: (_) => setState(() => _hovered = true),
-            onExit: (_) => setState(() => _hovered = false),
-            child: GestureDetector(
-              onTapDown: (_) => setState(() => _pressed = true),
-              onTapUp: (_) => setState(() => _pressed = false),
-              onTapCancel: () => setState(() => _pressed = false),
-              onTap: widget.onTap,
-              child: AnimatedScale(
-                duration: const Duration(milliseconds: 120),
-                scale: baseScale * hoverScale * pressScale,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: widget.borderGradientOverride == null
-                        ? widget.borderColorOverride
-                        : null,
-                    gradient: widget.borderGradientOverride ??
-                        (widget.borderColorOverride == null
-                            ? kAuroraGradient
-                            : null),
-                    borderRadius: BorderRadius.circular(widget.borderRadius),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            _shadowColor().withOpacity(_shadowAlpha()),
-                        blurRadius: widget.animatedGlow
-                            ? (widget.emphasize ? 26 : 20)
-                            : (widget.emphasize ? 22 : 16),
-                        spreadRadius: widget.animatedGlow ? 2 : 1,
-                      ),
-                    ],
-                  ),
+              onEnter: (_) => setState(() => _hovered = true),
+              onExit: (_) => setState(() => _hovered = false),
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => _pressed = true),
+                onTapUp: (_) => setState(() => _pressed = false),
+                onTapCancel: () => setState(() => _pressed = false),
+                onTap: widget.onTap,
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 120),
+                  scale: baseScale * hoverScale * pressScale,
                   child: Container(
-                    margin: EdgeInsets.all(widget.borderWidth),
-                    padding: widget.padding,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF15151A)
-                          .withValues(alpha: 0.28),
-                      borderRadius: BorderRadius.circular(
-                        widget.borderRadius - widget.borderWidth,
-                      ),
+                      color: widget.borderGradientOverride == null
+                          ? widget.borderColorOverride
+                          : null,
+                      gradient:
+                          widget.borderGradientOverride ??
+                          (widget.borderColorOverride == null
+                              ? kAuroraGradient
+                              : null),
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _shadowColor().withOpacity(_shadowAlpha()),
+                          blurRadius: widget.animatedGlow
+                              ? (widget.emphasize ? 26 : 20)
+                              : (widget.emphasize ? 22 : 16),
+                          spreadRadius: widget.animatedGlow ? 2 : 1,
+                        ),
+                      ],
                     ),
-                    child: widget.child,
+                    child: Container(
+                      margin: EdgeInsets.all(widget.borderWidth),
+                      padding: widget.padding,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF15151A).withValues(alpha: 0.28),
+                        borderRadius: BorderRadius.circular(
+                          widget.borderRadius - widget.borderWidth,
+                        ),
+                      ),
+                      child: widget.child,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           );
         },
       );
