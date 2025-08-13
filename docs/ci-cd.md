@@ -11,7 +11,7 @@ This repository uses GitHub Actions for automated testing, building, and deploym
 - ✅ Flutter tests with coverage reporting
 - ✅ Python code linting and type checking
 - ✅ Security scanning
-- ✅ Build verification (web + Android debug)
+ - ✅ Build verification (web only)
 
 ### 2. **Deploy to Firebase Hosting** (`firebase-hosting-merge.yml`)
 **Triggers:** Push to `main` branch
