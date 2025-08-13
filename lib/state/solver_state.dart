@@ -961,35 +961,10 @@ class SolverController extends StateNotifier<SolverUiState> {
           state.config.wordLength,
           (_) => const SolverTile(letter: '', feedback: TileFeedback.black),
         );
-        // Carry forward greens unless explicitly suppressed (after a reset/new game)
-        if (!state.suppressCarryForwardOnce) {
-          // Prefer pending locks captured before filler; else use last row greens
-          final pending = state.pendingGreenLocks;
-          if (pending != null && pending.isNotEmpty) {
-            for (final entry in pending.entries) {
-              final i = entry.key;
-              if (i >= 0 && i < newRow.length) {
-                newRow[i] = newRow[i].copyWith(
-                  letter: entry.value,
-                  feedback: TileFeedback.green,
-                );
-              }
-            }
-          } else {
-            final lastRow = state.grid.last;
-            for (int i = 0; i < lastRow.length && i < newRow.length; i++) {
-              if (lastRow[i].feedback == TileFeedback.green) {
-                newRow[i] = newRow[i].copyWith(
-                  letter: lastRow[i].letter,
-                  feedback: TileFeedback.green,
-                );
-              }
-            }
-          }
-        }
-        // Auto-populate prefix on the new row if present
+        // Do NOT carry forward letters or greens between rows; start clean.
+        // But if a prefix is defined, reflect it in the new row's first tile only.
         final prefix = state.config.prefix;
-        if (prefix != null && prefix.isNotEmpty) {
+        if (prefix != null && prefix.isNotEmpty && newRow.isNotEmpty) {
           newRow[0] = newRow[0].copyWith(
             letter: prefix[0].toLowerCase(),
             feedback: TileFeedback.green,
@@ -1008,7 +983,7 @@ class SolverController extends StateNotifier<SolverUiState> {
           pendingGreenLocks: null,
           // Once we move to the next step/row, relock prefix if present
           unlockPrefixThisRow: false,
-          // If carry-forward was suppressed for this transition, clear the flag now
+          // Flag becomes moot without carry-forward, but clear it after append
           suppressCarryForwardOnce: state.suppressCarryForwardOnce
               ? false
               : state.suppressCarryForwardOnce,

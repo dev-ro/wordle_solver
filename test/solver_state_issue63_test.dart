@@ -106,5 +106,80 @@ void main() {
       expect(ctrl.state.config.prefix, isNull);
       expect(ctrl.state.suppressCarryForwardOnce, isTrue);
     });
+
+    test(
+      'Submit does not carry forward greens into new row; prefix only reflects at index 0 when set',
+      () async {
+        final ctrl = SolverController(repository: _FakeRepo());
+        // Prepare a complete current row with some greens and a prefix
+        ctrl.state = ctrl.state.copyWith(
+          config: ctrl.state.config.copyWith(prefix: 'h'),
+          grid: [
+            const [
+              SolverTile(letter: 'h', feedback: TileFeedback.green),
+              SolverTile(letter: 'a', feedback: TileFeedback.black),
+              SolverTile(letter: 'n', feedback: TileFeedback.green),
+              SolverTile(letter: 'k', feedback: TileFeedback.black),
+              SolverTile(letter: 'y', feedback: TileFeedback.black),
+            ],
+          ],
+        );
+
+        await ctrl.requestRecommendations();
+
+        // After append, expect a second row with only prefix at index 0 and others empty
+        expect(ctrl.state.grid.length, 2);
+        final newRow = ctrl.state.grid.last;
+        expect(newRow.first.letter, 'h');
+        expect(newRow.first.feedback, TileFeedback.green);
+        for (int i = 1; i < newRow.length; i++) {
+          expect(newRow[i].letter.isEmpty, isTrue);
+          expect(newRow[i].feedback, TileFeedback.black);
+        }
+      },
+    );
+
+    test(
+      'After New, first Submit does not resurrect previous game greens',
+      () async {
+        final ctrl = SolverController(repository: _FakeRepo());
+        // Simulate finishing a game with greens
+        ctrl.state = ctrl.state.copyWith(
+          grid: [
+            const [
+              SolverTile(letter: 'h', feedback: TileFeedback.green),
+              SolverTile(letter: 'a', feedback: TileFeedback.green),
+              SolverTile(letter: 'n', feedback: TileFeedback.green),
+              SolverTile(letter: 'k', feedback: TileFeedback.green),
+              SolverTile(letter: 'y', feedback: TileFeedback.green),
+            ],
+          ],
+        );
+
+        // New game
+        ctrl.resetGame();
+
+        // Fill current row completely and submit
+        final filled = const [
+          SolverTile(letter: 's', feedback: TileFeedback.black),
+          SolverTile(letter: 't', feedback: TileFeedback.black),
+          SolverTile(letter: 'a', feedback: TileFeedback.black),
+          SolverTile(letter: 'r', feedback: TileFeedback.black),
+          SolverTile(letter: 'e', feedback: TileFeedback.black),
+        ];
+        ctrl.state = ctrl.state.copyWith(grid: [filled]);
+        await ctrl.requestRecommendations();
+
+        expect(ctrl.state.grid.length, 2);
+        final newRow = ctrl.state.grid.last;
+        // Ensure no greens or letters were carried forward
+        expect(
+          newRow.every(
+            (t) => t.letter.isEmpty && t.feedback == TileFeedback.black,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }
