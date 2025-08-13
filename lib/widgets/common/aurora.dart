@@ -181,8 +181,55 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
     if (widget.animatedGlow && _glowCtrl != null) {
       content = AnimatedBuilder(
         animation: _glowCtrl!,
-        builder: (context, child) => child!,
-        child: content,
+        builder: (context, _) {
+          // Rebuild the outer container so BoxShadow alpha updates
+          return MouseRegion(
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: GestureDetector(
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapUp: (_) => setState(() => _pressed = false),
+              onTapCancel: () => setState(() => _pressed = false),
+              onTap: widget.onTap,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 120),
+                scale: baseScale * hoverScale * pressScale,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.borderGradientOverride == null
+                        ? widget.borderColorOverride
+                        : null,
+                    gradient: widget.borderGradientOverride ??
+                        (widget.borderColorOverride == null
+                            ? kAuroraGradient
+                            : null),
+                    borderRadius: BorderRadius.circular(widget.borderRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _shadowColor()
+                            .withValues(alpha: _shadowAlpha()),
+                        blurRadius: widget.emphasize ? 22 : 16,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    margin: EdgeInsets.all(widget.borderWidth),
+                    padding: widget.padding,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF15151A)
+                          .withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(
+                        widget.borderRadius - widget.borderWidth,
+                      ),
+                    ),
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       );
     }
 
