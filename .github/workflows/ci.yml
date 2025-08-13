@@ -43,9 +43,7 @@ jobs:
 
       - name: Build Flutter web (debug)
         run: flutter build web --debug
-
-      - name: Build Flutter Android APK (debug)
-        run: flutter build apk --debug
+      # Android build removed to speed up CI runs
 
   bash-scripts-check:
     name: Bash Scripts Check
