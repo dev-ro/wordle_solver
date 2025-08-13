@@ -96,9 +96,10 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-    _glowTween = Tween<double>(begin: 0.16, end: 0.34).animate(
-      CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
-    );
+    _glowTween = Tween<double>(
+      begin: 0.16,
+      end: 0.34,
+    ).animate(CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -129,14 +130,13 @@ class _AuroraHoverTileState extends State<AuroraHoverTile>
               color: widget.borderGradientOverride == null
                   ? widget.borderColorOverride
                   : null,
-              gradient: widget.borderGradientOverride ??
+              gradient:
+                  widget.borderGradientOverride ??
                   (widget.borderColorOverride == null ? kAuroraGradient : null),
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: _shadowColor().withValues(
-                    alpha: _shadowAlpha(),
-                  ),
+                  color: _shadowColor().withValues(alpha: _shadowAlpha()),
                   blurRadius: widget.emphasize ? 22 : 16,
                   spreadRadius: 1,
                 ),
