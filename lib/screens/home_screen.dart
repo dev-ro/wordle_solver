@@ -992,13 +992,15 @@ class _LengthSelectorSection extends ConsumerWidget {
               minimumSize: const Size(0, 0),
             );
             // Compute responsive columns so options wrap neatly on any width
-            const double _spacing = 6.0;
-            final double _minTileWidth = isNarrow ? 44.0 : 48.0;
-            final int _columns = (c.maxWidth / (_minTileWidth + _spacing))
-                .floor()
-                .clamp(2, 8);
-            final double _tileWidth =
-                (c.maxWidth - _spacing * (_columns - 1)) / _columns;
+            const double spacingValue = 6.0;
+            final double minTileWidth = isNarrow ? 44.0 : 48.0;
+            final int columnsCount =
+                (c.maxWidth / (minTileWidth + spacingValue)).floor().clamp(
+                  2,
+                  8,
+                );
+            final double tileWidth =
+                (c.maxWidth - spacingValue * (columnsCount - 1)) / columnsCount;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1011,8 +1013,8 @@ class _LengthSelectorSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Wrap(
-                  spacing: _spacing,
-                  runSpacing: _spacing,
+                  spacing: spacingValue,
+                  runSpacing: spacingValue,
                   children: [
                     for (final len in values)
                       Builder(
@@ -1037,7 +1039,7 @@ class _LengthSelectorSection extends ConsumerWidget {
                           }
 
                           return SizedBox(
-                            width: _tileWidth,
+                            width: tileWidth,
                             child: selected
                                 ? FilledButton(
                                     style: buttonStyle,
