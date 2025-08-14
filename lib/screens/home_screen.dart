@@ -808,42 +808,42 @@ class _GridSectionState extends State<_GridSection> {
                                         .read(fillerControllerProvider.notifier)
                                         .lastAutoSuggestLetters;
                                     if (letters.trim().length <= 2) {
-                                      if (!context.mounted) return;
-                                      if (isIOSPlatform) {
-                                        await showCupertinoDialog<void>(
-                                          context: context,
-                                          builder: (ctx) =>
-                                              const CupertinoAlertDialog(
-                                                title: Text(
-                                                  'Need at least 3 letters',
-                                                ),
-                                                content: Text(
-                                                  'Suggest works best when there are 3 or more letters to search.',
-                                                ),
-                                              ),
-                                        );
-                                      } else {
-                                        await showDialog<void>(
-                                          context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            title: const Text(
-                                              'Need at least 3 letters',
-                                            ),
-                                            content: const Text(
-                                              'Suggest works best when there are 3 or more letters to search.',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(ctx).pop(),
-                                                child: const Text('OK'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
+                                       if (!context.mounted) return;
+                                       if (isIOSPlatform) {
+                                         await showCupertinoDialog<void>(
+                                           context: context,
+                                           builder: (ctx) =>
+                                               const CupertinoAlertDialog(
+                                                 title: Text(
+                                                   'Need at least 3 letters',
+                                                 ),
+                                                 content: Text(
+                                                   'Suggest works best when there are 3 or more letters to search.',
+                                                 ),
+                                               ),
+                                         );
+                                       } else {
+                                         await showDialog<void>(
+                                           context: context,
+                                           builder: (ctx) => AlertDialog(
+                                             title: const Text(
+                                               'Need at least 3 letters',
+                                             ),
+                                             content: const Text(
+                                               'Suggest works best when there are 3 or more letters to search.',
+                                             ),
+                                             actions: [
+                                               TextButton(
+                                                 onPressed: () =>
+                                                     Navigator.of(ctx).pop(),
+                                                 child: const Text('OK'),
+                                               ),
+                                             ],
+                                           ),
+                                         );
+                                       }
+                                       return;
+                                     }
                                     fillerCtrl.setQuery(
                                       letters,
                                       config: state.config,
