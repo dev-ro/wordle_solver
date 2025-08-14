@@ -788,6 +788,10 @@ class _GridSectionState extends State<_GridSection> {
                             onPressed: state.isLoading || !canSuggest
                                 ? null
                                 : () async {
+                                    // Capture platform synchronously before awaiting to satisfy analyzer
+                                    final bool isIOSPlatform =
+                                        Theme.of(context).platform ==
+                                        TargetPlatform.iOS;
                                     final remaining =
                                         state.lastResponse?.remainingWords ??
                                         const <String>[];
@@ -804,9 +808,6 @@ class _GridSectionState extends State<_GridSection> {
                                         .read(fillerControllerProvider.notifier)
                                         .lastAutoSuggestLetters;
                                     if (letters.trim().length <= 2) {
-                                      final bool isIOSPlatform =
-                                          Theme.of(context).platform ==
-                                          TargetPlatform.iOS;
                                       if (!context.mounted) return;
                                       if (isIOSPlatform) {
                                         await showCupertinoDialog<void>(
