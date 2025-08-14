@@ -133,6 +133,37 @@ class SolverController extends StateNotifier<SolverUiState> {
     _scheduleInitialRecommendations();
   }
 
+  // Public helper: collect all known green letters for the current game from
+  // prefix, pending locks, and history rows (excludes the current input row).
+  // Letters are returned as a lowercase Set for efficient membership checks.
+  Set<String> getKnownGreenLetters() {
+    final Set<String> greens = {};
+    // Prefix implies first tile green
+    final p = state.config.prefix;
+    if (p != null && p.isNotEmpty) {
+      greens.add(p[0].toLowerCase());
+    }
+    // Pending locks captured before filler application
+    final pending = state.pendingGreenLocks;
+    if (pending != null) {
+      for (final ch in pending.values) {
+        if (ch.isNotEmpty) greens.add(ch.toLowerCase());
+      }
+    }
+    // Scan history rows (exclude current input row)
+    if (state.grid.length > 1) {
+      for (int r = state.grid.length - 2; r >= 0; r--) {
+        final row = state.grid[r];
+        for (final t in row) {
+          if (t.feedback == TileFeedback.green && t.letter.isNotEmpty) {
+            greens.add(t.letter.toLowerCase());
+          }
+        }
+      }
+    }
+    return greens;
+  }
+
   // Kick off initial recommendations shortly after controller is created.
   // This runs on app load to populate the recommendations panel automatically.
   void _scheduleInitialRecommendations() {
