@@ -75,10 +75,10 @@ class _BokehBackgroundState extends State<BokehBackground>
     final rand = math.Random(42);
     final colors = kAuroraGradient.colors;
 
-    // Adapt orb count to size (increase for stronger visibility)
+    // Adapt orb count to size with a lighter default for all platforms
     final baseCount = size.shortestSide < 500
-        ? 10
-        : (size.shortestSide < 900 ? 14 : 18);
+        ? 6
+        : (size.shortestSide < 900 ? 10 : 12);
 
     // Use a jittered grid layout to avoid visible clustering
     final cols = (math.sqrt(baseCount)).ceil();
@@ -101,11 +101,11 @@ class _BokehBackgroundState extends State<BokehBackground>
 
       final color = colors[i % colors.length];
       final radius = lerpDouble(
-        60,
-        size.shortestSide * 0.22,
+        48,
+        size.shortestSide * 0.18,
         rand.nextDouble(),
       )!;
-      final alpha = lerpDouble(0.16, 0.28, rand.nextDouble())!;
+      final alpha = lerpDouble(0.10, 0.20, rand.nextDouble())!;
 
       // Seamless periodic motion parameters (integer frequencies)
       final freqX = 1 + rand.nextInt(3); // 1..3
@@ -152,20 +152,22 @@ class _BokehPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, bgPaint);
 
     final outerPaint = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
-    final innerPaint = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     for (final orb in orbs) {
       final pos = orb.positionAt(time);
-      // Outer soft glow
+      // Outer soft glow (softer than before)
       outerPaint.color = orb.color;
       canvas.drawCircle(pos, orb.radius, outerPaint);
-      // Inner brighter core to make the bokeh stand out in screenshots
-      innerPaint.color = orb.color.withValues(
-        alpha: (orb.alpha + 0.22).clamp(0.0, 0.6),
+      // Subtle ring to add structure without a harsh solid core
+      ringPaint.color = orb.color.withValues(
+        alpha: (orb.alpha * 0.6).clamp(0.0, 0.24),
       );
-      canvas.drawCircle(pos, orb.radius * 0.45, innerPaint);
+      canvas.drawCircle(pos, orb.radius * 0.52, ringPaint);
     }
   }
 

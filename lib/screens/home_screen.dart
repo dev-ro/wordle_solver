@@ -31,6 +31,8 @@ class HomeScreen extends ConsumerWidget {
               _TopControls(state: state, controller: controller),
               const SizedBox(height: 16),
               _GridSection(state: state, controller: controller),
+              const SizedBox(height: 16),
+              _LengthSelectorSection(state: state, controller: controller),
               const SizedBox(height: 24),
               _RecommendationsSection(state: state, controller: controller),
               const DeveloperFooter(),
@@ -251,80 +253,7 @@ class _TopControls extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Length: ${state.config.wordLength}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    LayoutBuilder(
-                      builder: (context, c) {
-                        // Responsive discrete selector: values 4..15 in a wrap/grid-like layout
-                        final values = List<int>.generate(12, (i) => 4 + i);
-                        final isNarrow = c.maxWidth < 480;
-                        final buttonStyle = FilledButton.styleFrom(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isNarrow ? 8 : 10,
-                            vertical: isNarrow ? 8 : 10,
-                          ),
-                          visualDensity: isNarrow
-                              ? const VisualDensity(
-                                  horizontal: -2,
-                                  vertical: -2,
-                                )
-                              : VisualDensity.compact,
-                          minimumSize: const Size(0, 0),
-                        );
-                        return Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            for (final len in values)
-                              Builder(
-                                builder: (context) {
-                                  final bool selected =
-                                      len == state.config.wordLength;
-                                  final Widget inner = Text(
-                                    '$len',
-                                    style: TextStyle(
-                                      fontWeight: selected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  );
-                                  void onPressed() {
-                                    controller.setWordLength(len);
-                                    final newConfig = state.config.copyWith(
-                                      wordLength: len,
-                                      prefix: null,
-                                    );
-                                    fillerCtrl.setQuery('', config: newConfig);
-                                  }
-
-                                  return SizedBox(
-                                    width: isNarrow
-                                        ? (c.maxWidth - 6 * 3) / 4
-                                        : null,
-                                    child: selected
-                                        ? FilledButton(
-                                            style: buttonStyle,
-                                            onPressed: onPressed,
-                                            child: inner,
-                                          )
-                                        : FilledButton.tonal(
-                                            style: buttonStyle,
-                                            onPressed: onPressed,
-                                            child: inner,
-                                          ),
-                                  );
-                                },
-                              ),
-                          ],
-                        );
-                      },
-                    ),
+                    // Length selector moved below the board (see _LengthSelectorSection)
                   ],
                 ),
               ),
@@ -409,14 +338,7 @@ class _TopControls extends ConsumerWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              Tooltip(
-                message:
-                    'Toggle all tiles in the current word between Green and Black',
-                child: IconButton(
-                  icon: const Icon(Icons.task_alt_rounded),
-                  onPressed: () => controller.toggleAllGreenForCurrentRow(),
-                ),
-              ),
+              // Toggle all tiles control moved next to color selector under the board
             ],
           ),
           const SizedBox(height: 12),
@@ -603,6 +525,37 @@ class _GridSectionState extends State<_GridSection> {
                                 : TileFeedback.yellow,
                           );
                         },
+                      ),
+                    ),
+                    Tooltip(
+                      message:
+                          'Toggle all tiles in the current word between Green and Black',
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () =>
+                                controller.toggleAllGreenForCurrentRow(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white24,
+                                  width: 1.5,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.task_alt_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1018,6 +971,95 @@ class _RecommendationsSection extends ConsumerWidget {
             );
           }
         },
+      ),
+    );
+  }
+}
+
+class _LengthSelectorSection extends ConsumerWidget {
+  final SolverUiState state;
+  final SolverController controller;
+
+  const _LengthSelectorSection({required this.state, required this.controller});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fillerCtrl = ref.read(fillerControllerProvider.notifier);
+    return AuroraCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6.0),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final values = List<int>.generate(12, (i) => 4 + i);
+            final isNarrow = c.maxWidth < 480;
+            final buttonStyle = FilledButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                horizontal: isNarrow ? 8 : 10,
+                vertical: isNarrow ? 8 : 10,
+              ),
+              visualDensity: isNarrow
+                  ? const VisualDensity(horizontal: -2, vertical: -2)
+                  : VisualDensity.compact,
+              minimumSize: const Size(0, 0),
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Length: ${state.config.wordLength}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final len in values)
+                      Builder(
+                        builder: (context) {
+                          final bool selected = len == state.config.wordLength;
+                          final inner = Text(
+                            '$len',
+                            style: TextStyle(
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          );
+                          void onPressed() {
+                            controller.setWordLength(len);
+                            final newConfig = state.config.copyWith(
+                              wordLength: len,
+                              prefix: null,
+                            );
+                            fillerCtrl.setQuery('', config: newConfig);
+                          }
+
+                          return SizedBox(
+                            width: isNarrow ? (c.maxWidth - 6 * 3) / 4 : null,
+                            child: selected
+                                ? FilledButton(
+                                    style: buttonStyle,
+                                    onPressed: onPressed,
+                                    child: inner,
+                                  )
+                                : FilledButton.tonal(
+                                    style: buttonStyle,
+                                    onPressed: onPressed,
+                                    child: inner,
+                                  ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
