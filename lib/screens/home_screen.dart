@@ -249,17 +249,6 @@ class _TopControls extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Length selector moved below the board (see _LengthSelectorSection)
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Prefix chip removed; prefix control is now an action button below the board
-              const SizedBox(width: 12),
               Flexible(
                 flex: 1,
                 child: DropdownButtonFormField<String>(
@@ -1002,6 +991,15 @@ class _LengthSelectorSection extends ConsumerWidget {
                   : VisualDensity.compact,
               minimumSize: const Size(0, 0),
             );
+            // Compute responsive columns so options wrap neatly on any width
+            const double _spacing = 6.0;
+            final double _minTileWidth = isNarrow ? 44.0 : 48.0;
+            final int _columns = (c.maxWidth / (_minTileWidth + _spacing))
+                .floor()
+                .clamp(2, 8);
+            final double _tileWidth =
+                (c.maxWidth - _spacing * (_columns - 1)) / _columns;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1013,8 +1011,8 @@ class _LengthSelectorSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+                  spacing: _spacing,
+                  runSpacing: _spacing,
                   children: [
                     for (final len in values)
                       Builder(
@@ -1039,7 +1037,7 @@ class _LengthSelectorSection extends ConsumerWidget {
                           }
 
                           return SizedBox(
-                            width: isNarrow ? (c.maxWidth - 6 * 3) / 4 : null,
+                            width: _tileWidth,
                             child: selected
                                 ? FilledButton(
                                     style: buttonStyle,
