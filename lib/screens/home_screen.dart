@@ -726,9 +726,14 @@ class _GridSectionState extends State<_GridSection> {
                                     final remaining =
                                         state.lastResponse?.remainingWords ??
                                         const <String>[];
+                                    // Omit letters known green in this game
+                                    final omit = ref
+                                        .read(solverControllerProvider.notifier)
+                                        .getKnownGreenLetters();
                                     await fillerCtrl.computeAutoSuggest(
                                       config: state.config,
                                       remainingCandidates: remaining,
+                                      omitLetters: omit,
                                     );
                                     final letters = ref
                                         .read(fillerControllerProvider.notifier)

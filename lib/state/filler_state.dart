@@ -107,16 +107,23 @@ class FillerController extends StateNotifier<FillerUiState> {
   Future<void> computeAutoSuggest({
     required SolverConfig config,
     required List<String> remainingCandidates,
+    Set<String>? omitLetters,
   }) async {
     final positions = service.findVariableLetterPositions(remainingCandidates);
-    final letters = service.collectVariableLetters(positions);
+    var letters = service.collectVariableLetters(positions);
+    if (omitLetters != null && omitLetters.isNotEmpty) {
+      final filtered =
+          letters.split('').where((ch) => !omitLetters.contains(ch)).toList()
+            ..sort();
+      letters = filtered.join();
+    }
     _lastAutoSuggestLetters = letters;
     final all = await service.loadDictionary(config.dictionary);
     // Filler auto-suggest ignores prefix and previous guesses; only match length
-    final filtered = all
+    final filteredWords = all
         .where((w) => w.length == config.wordLength)
         .toList(growable: false);
-    final results = service.findWordsWithLetters(filtered, letters, n: 9);
+    final results = service.findWordsWithLetters(filteredWords, letters, n: 9);
     state = state.copyWith(autoSuggestResults: results);
   }
 
