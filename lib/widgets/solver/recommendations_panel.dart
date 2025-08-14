@@ -50,10 +50,20 @@ class RecommendationsPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ] else if (response!.recommendations.isEmpty) ...[
-          Text(
-            'No recommendations yet. Try adjusting input or press Submit again.',
-            style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
-            textAlign: TextAlign.center,
+          Builder(
+            builder: (context) {
+              final remaining = response!.remainingCount;
+              final msg = remaining == 0
+                  ? 'No candidates remain for the current inputs. It’s possible the word isn’t in this dictionary yet. Future versions will let you add words. Try adjusting inputs and Submit again.'
+                  : 'No recommendations yet. Try adjusting input or press Submit again.';
+              return Text(
+                msg,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              );
+            },
           ),
         ] else ...[
           LayoutBuilder(
