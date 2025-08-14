@@ -281,30 +281,45 @@ class _TopControls extends ConsumerWidget {
                           runSpacing: 6,
                           children: [
                             for (final len in values)
-                              SizedBox(
-                                width: isNarrow
-                                    ? (c.maxWidth - 6 * 3) / 4
-                                    : null,
-                                child: FilledButton.tonal(
-                                  style: buttonStyle,
-                                  onPressed: () {
+                              Builder(
+                                builder: (context) {
+                                  final bool selected =
+                                      len == state.config.wordLength;
+                                  final Widget inner = Text(
+                                    '$len',
+                                    style: TextStyle(
+                                      fontWeight: selected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  );
+                                  void onPressed() {
                                     controller.setWordLength(len);
                                     final newConfig = state.config.copyWith(
                                       wordLength: len,
                                       prefix: null,
                                     );
                                     fillerCtrl.setQuery('', config: newConfig);
-                                  },
-                                  child: Text(
-                                    '$len',
-                                    style: TextStyle(
-                                      fontWeight: len == state.config.wordLength
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
+                                  }
+
+                                  return SizedBox(
+                                    width: isNarrow
+                                        ? (c.maxWidth - 6 * 3) / 4
+                                        : null,
+                                    child: selected
+                                        ? FilledButton(
+                                            style: buttonStyle,
+                                            onPressed: onPressed,
+                                            child: inner,
+                                          )
+                                        : FilledButton.tonal(
+                                            style: buttonStyle,
+                                            onPressed: onPressed,
+                                            child: inner,
+                                          ),
+                                  );
+                                },
                               ),
                           ],
                         );
@@ -392,6 +407,15 @@ class _TopControls extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(width: 8),
+              Tooltip(
+                message:
+                    'Toggle all tiles in the current word between Green and Black',
+                child: IconButton(
+                  icon: const Icon(Icons.task_alt_rounded),
+                  onPressed: () => controller.toggleAllGreenForCurrentRow(),
+                ),
               ),
             ],
           ),
@@ -508,45 +532,15 @@ class _GridSectionState extends State<_GridSection> {
                     return Column(
                       children: [
                         for (int r = 0; r < state.grid.length; r++) ...[
-                          if (r == state.grid.length - 1)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: _FocusableFeedbackRow(
-                                    key: _getOrCreateRowKey(r),
-                                    tiles: state.grid[r],
-                                    onToggleFeedback: (i) =>
-                                        controller.toggleFeedback(i),
-                                    onLetterChanged: (i, v) =>
-                                        controller.overwriteLetterAtIndex(i, v),
-                                    // Reserve space for the trailing icon button
-                                    maxWidth: c.maxWidth - 32 - 48,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Tooltip(
-                                  message:
-                                      'Toggle all tiles in current word between Green and Black',
-                                  child: IconButton(
-                                    icon: const Icon(Icons.task_alt_rounded),
-                                    onPressed: () {
-                                      controller.toggleAllGreenForCurrentRow();
-                                    },
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            _FocusableFeedbackRow(
-                              key: _getOrCreateRowKey(r),
-                              tiles: state.grid[r],
-                              onToggleFeedback: (i) =>
-                                  controller.toggleFeedback(i),
-                              onLetterChanged: (i, v) =>
-                                  controller.overwriteLetterAtIndex(i, v),
-                              maxWidth: c.maxWidth - 32, // inner padding margin
-                            ),
+                          _FocusableFeedbackRow(
+                            key: _getOrCreateRowKey(r),
+                            tiles: state.grid[r],
+                            onToggleFeedback: (i) =>
+                                controller.toggleFeedback(i),
+                            onLetterChanged: (i, v) =>
+                                controller.overwriteLetterAtIndex(i, v),
+                            maxWidth: c.maxWidth - 32, // inner padding margin
+                          ),
                           if (r != state.grid.length - 1)
                             const SizedBox(height: 12),
                         ],
@@ -788,6 +782,10 @@ class _GridSectionState extends State<_GridSection> {
                             onPressed: state.isLoading || !canSuggest
                                 ? null
                                 : () async {
+                                    // Capture platform synchronously before awaiting to satisfy analyzer
+                                    final bool isIOSPlatform =
+                                        Theme.of(context).platform ==
+                                        TargetPlatform.iOS;
                                     final remaining =
                                         state.lastResponse?.remainingWords ??
                                         const <String>[];
@@ -804,9 +802,6 @@ class _GridSectionState extends State<_GridSection> {
                                         .read(fillerControllerProvider.notifier)
                                         .lastAutoSuggestLetters;
                                     if (letters.trim().length <= 2) {
-                                      final bool isIOSPlatform =
-                                          Theme.of(context).platform ==
-                                          TargetPlatform.iOS;
                                       if (!context.mounted) return;
                                       if (isIOSPlatform) {
                                         await showCupertinoDialog<void>(
