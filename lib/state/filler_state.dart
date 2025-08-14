@@ -65,7 +65,13 @@ class FillerController extends StateNotifier<FillerUiState> {
     // Invalidate any in-flight manual searches and capture this call's id
     final int requestIdForThisCall = ++_manualSearchRequestId;
 
-    if (query.trim().isEmpty) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      state = state.copyWith(manualResults: [], isLoadingManual: false);
+      return;
+    }
+    // Robust guard: ignore queries shorter than 3 letters to avoid noisy results
+    if (trimmed.length < 3) {
       state = state.copyWith(manualResults: [], isLoadingManual: false);
       return;
     }
@@ -73,7 +79,7 @@ class FillerController extends StateNotifier<FillerUiState> {
     state = state.copyWith(isLoadingManual: true);
     _debounce = Timer(const Duration(milliseconds: 250), () {
       _performManualSearch(
-        query: query,
+        query: trimmed,
         config: config,
         requestId: requestIdForThisCall,
       );

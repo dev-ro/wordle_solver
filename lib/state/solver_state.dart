@@ -133,6 +133,42 @@ class SolverController extends StateNotifier<SolverUiState> {
     _scheduleInitialRecommendations();
   }
 
+  // Toggle all non-empty tiles in the current row between Green and Black.
+  // - If any non-empty tile is not green, set all non-empty tiles to green
+  // - Else (all non-empty are green), set them to black unless history/prefix
+  //   indicates the same letter is known green for that position
+  void toggleAllGreenForCurrentRow() {
+    if (state.grid.isEmpty) return;
+    final rows = List<List<SolverTile>>.from(state.grid.map((r) => List.of(r)));
+    final current = List<SolverTile>.from(rows.removeLast());
+    if (current.isEmpty) {
+      rows.add(current);
+      state = state.copyWith(grid: rows);
+      return;
+    }
+    final hasAnyNonGreenNonEmpty = current.any(
+      (t) => t.letter.isNotEmpty && t.feedback != TileFeedback.green,
+    );
+    if (hasAnyNonGreenNonEmpty) {
+      for (int i = 0; i < current.length; i++) {
+        if (current[i].letter.isEmpty) continue;
+        current[i] = current[i].copyWith(feedback: TileFeedback.green);
+      }
+    } else {
+      for (int i = 0; i < current.length; i++) {
+        if (current[i].letter.isEmpty) continue;
+        final known = _knownGreenLetterAt(i);
+        if (known != null && known == current[i].letter.toLowerCase()) {
+          // keep green
+          continue;
+        }
+        current[i] = current[i].copyWith(feedback: TileFeedback.black);
+      }
+    }
+    rows.add(current);
+    state = state.copyWith(grid: rows, currentRowFeedbackTouched: true);
+  }
+
   // Public helper: collect all known green letters for the current game from
   // prefix, pending locks, and history rows (excludes the current input row).
   // Letters are returned as a lowercase Set for efficient membership checks.

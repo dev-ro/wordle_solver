@@ -257,26 +257,58 @@ class _TopControls extends ConsumerWidget {
                         context,
                       ).textTheme.labelMedium?.copyWith(color: Colors.white),
                     ),
-                    SliderTheme(
-                      data: SliderTheme.of(
-                        context,
-                      ).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
-                      child: Slider(
-                        min: 4,
-                        max: 15,
-                        // Remove divisions to hide internal ticks, but keep integer snapping
-                        value: state.config.wordLength.toDouble(),
-                        onChanged: (v) {
-                          final len = v.round().clamp(4, 15);
-                          controller.setWordLength(len);
-                          // Clear filler query as part of full reset semantics
-                          final newConfig = state.config.copyWith(
-                            wordLength: len,
-                            prefix: null,
-                          );
-                          fillerCtrl.setQuery('', config: newConfig);
-                        },
-                      ),
+                    const SizedBox(height: 8),
+                    LayoutBuilder(
+                      builder: (context, c) {
+                        // Responsive discrete selector: values 4..15 in a wrap/grid-like layout
+                        final values = List<int>.generate(12, (i) => 4 + i);
+                        final isNarrow = c.maxWidth < 480;
+                        final buttonStyle = FilledButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isNarrow ? 8 : 10,
+                            vertical: isNarrow ? 8 : 10,
+                          ),
+                          visualDensity: isNarrow
+                              ? const VisualDensity(
+                                  horizontal: -2,
+                                  vertical: -2,
+                                )
+                              : VisualDensity.compact,
+                          minimumSize: const Size(0, 0),
+                        );
+                        return Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final len in values)
+                              SizedBox(
+                                width: isNarrow
+                                    ? (c.maxWidth - 6 * 3) / 4
+                                    : null,
+                                child: FilledButton.tonal(
+                                  style: buttonStyle,
+                                  onPressed: () {
+                                    controller.setWordLength(len);
+                                    final newConfig = state.config.copyWith(
+                                      wordLength: len,
+                                      prefix: null,
+                                    );
+                                    fillerCtrl.setQuery('', config: newConfig);
+                                  },
+                                  child: Text(
+                                    '$len',
+                                    style: TextStyle(
+                                      fontWeight: len == state.config.wordLength
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -378,9 +410,12 @@ class _TopControls extends ConsumerWidget {
                           : fillerState.query.trim().split('').toSet().length,
                       onSelectWord: (word) {
                         // Apply filler: set all tiles to black and letters
-                        ref
-                            .read(solverControllerProvider.notifier)
-                            .applyFillerWord(word);
+                        final solverCtrl = ref.read(
+                          solverControllerProvider.notifier,
+                        );
+                        solverCtrl.applyFillerWord(word);
+                        // Focus first tile for immediate coloring
+                        solverCtrl.selectTile(0);
                         if (state.config.autoCopyOnSelect) {
                           final textToCopy = '!${word.toLowerCase()}';
                           Clipboard.setData(ClipboardData(text: textToCopy));
@@ -473,15 +508,45 @@ class _GridSectionState extends State<_GridSection> {
                     return Column(
                       children: [
                         for (int r = 0; r < state.grid.length; r++) ...[
-                          _FocusableFeedbackRow(
-                            key: _getOrCreateRowKey(r),
-                            tiles: state.grid[r],
-                            onToggleFeedback: (i) =>
-                                controller.toggleFeedback(i),
-                            onLetterChanged: (i, v) =>
-                                controller.overwriteLetterAtIndex(i, v),
-                            maxWidth: c.maxWidth - 32, // inner padding margin
-                          ),
+                          if (r == state.grid.length - 1)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: _FocusableFeedbackRow(
+                                    key: _getOrCreateRowKey(r),
+                                    tiles: state.grid[r],
+                                    onToggleFeedback: (i) =>
+                                        controller.toggleFeedback(i),
+                                    onLetterChanged: (i, v) =>
+                                        controller.overwriteLetterAtIndex(i, v),
+                                    // Reserve space for the trailing icon button
+                                    maxWidth: c.maxWidth - 32 - 48,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Tooltip(
+                                  message:
+                                      'Toggle all tiles in current word between Green and Black',
+                                  child: IconButton(
+                                    icon: const Icon(Icons.task_alt_rounded),
+                                    onPressed: () {
+                                      controller.toggleAllGreenForCurrentRow();
+                                    },
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            _FocusableFeedbackRow(
+                              key: _getOrCreateRowKey(r),
+                              tiles: state.grid[r],
+                              onToggleFeedback: (i) =>
+                                  controller.toggleFeedback(i),
+                              onLetterChanged: (i, v) =>
+                                  controller.overwriteLetterAtIndex(i, v),
+                              maxWidth: c.maxWidth - 32, // inner padding margin
+                            ),
                           if (r != state.grid.length - 1)
                             const SizedBox(height: 12),
                         ],
@@ -738,6 +803,46 @@ class _GridSectionState extends State<_GridSection> {
                                     final letters = ref
                                         .read(fillerControllerProvider.notifier)
                                         .lastAutoSuggestLetters;
+                                    if (letters.trim().length <= 2) {
+                                      final bool isIOSPlatform =
+                                          Theme.of(context).platform ==
+                                          TargetPlatform.iOS;
+                                      if (!context.mounted) return;
+                                      if (isIOSPlatform) {
+                                        await showCupertinoDialog<void>(
+                                          context: context,
+                                          builder: (ctx) =>
+                                              const CupertinoAlertDialog(
+                                                title: Text(
+                                                  'Need at least 3 letters',
+                                                ),
+                                                content: Text(
+                                                  'Suggest works best when there are 3 or more letters to search.',
+                                                ),
+                                              ),
+                                        );
+                                      } else {
+                                        await showDialog<void>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text(
+                                              'Need at least 3 letters',
+                                            ),
+                                            content: const Text(
+                                              'Suggest works best when there are 3 or more letters to search.',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(ctx).pop(),
+                                                child: const Text('OK'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
                                     fillerCtrl.setQuery(
                                       letters,
                                       config: state.config,
@@ -883,7 +988,7 @@ class _ColorPickTile extends StatelessWidget {
   }
 }
 
-class _RecommendationsSection extends StatelessWidget {
+class _RecommendationsSection extends ConsumerWidget {
   final SolverUiState state;
   final SolverController controller;
 
@@ -893,13 +998,19 @@ class _RecommendationsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AuroraCard(
       child: RecommendationsPanel(
         response: state.lastResponse,
         isLoading: state.isLoading,
         onSelectWord: (word) {
           controller.applyWordToCurrentRow(word);
+          // After applying a word from recommendations, focus first tile
+          // to allow immediate coloring from the start.
+          // Use the grid keyboard focus scope: select index 0.
+          controller.selectTile(0);
+          final node = ref.read(gridKeyboardFocusNodeProvider);
+          FocusScope.of(context).requestFocus(node);
           if (state.config.autoCopyOnSelect) {
             final textToCopy = '!${word.toLowerCase()}';
             Clipboard.setData(ClipboardData(text: textToCopy));
