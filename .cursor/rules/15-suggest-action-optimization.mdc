@@ -1,0 +1,7 @@
+# Rule: Suggest Action Optimization
+
+- Omit current game's green letters from Suggest search string.
+- Reset green-letter state on new game.
+- Do not omit yellow letters.
+- Preserve variable-position matching and auto-fill.
+- Add tests for exclusion and reset.
