@@ -2,7 +2,7 @@
 
 # Firebase Deployment Script for Wordle Solver
 # Usage: ./scripts/deploy.sh [target]
-# Targets: all, hosting, database, storage, firestore
+# Targets: all, hosting, database, storage, firestore, functions
 
 set -e  # Exit on any error
 
@@ -56,7 +56,11 @@ build_web() {
     log_success "Flutter web build completed"
 }
 
-# Deploy functions
+deploy_functions() {
+    log_info "Deploying Cloud Functions (Python 3.12)..."
+    firebase deploy --only functions --project wordle-solver-kyle
+    log_success "Cloud Functions deployed"
+}
 
 # Deploy hosting
 deploy_hosting() {
@@ -112,6 +116,9 @@ main() {
         "hosting")
             check_flutter
             deploy_hosting
+            ;;
+        "functions")
+            deploy_functions
             ;;
         "database")
             deploy_database

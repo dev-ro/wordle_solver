@@ -19,6 +19,14 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow read: if request.auth != null;
     }
+    // Submissions collection for dictionary ingestion
+    // Structure: /dictionary (collection) /submissions (document) /items (subcollection) /{docId}
+    match /dictionary/submissions/items/{docId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      // Updates are performed by backend functions service account
+      allow update, delete: if false;
+    }
     
     match /feedback/appImprovements/{document=**} {
       allow create: if request.auth != null;

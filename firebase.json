@@ -22,6 +22,10 @@
       }
     ]
   },
+  "functions": {
+    "source": "functions-python",
+    "runtime": "python312"
+  },
   "flutter": {
     "platforms": {
       "android": {
