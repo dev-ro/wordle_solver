@@ -112,6 +112,7 @@ flutter run
 ./scripts/format.sh
 ./scripts/deploy.sh
 ./scripts/upload-dictionaries.sh
+./scripts/deploy.sh functions # Deploy Cloud Functions (Python 3.12)
 ```
 
 ## Contributing

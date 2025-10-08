@@ -30,9 +30,9 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _TopControls(state: state, controller: controller),
               const SizedBox(height: 16),
-              _GridSection(state: state, controller: controller),
-              const SizedBox(height: 16),
               _LengthSelectorSection(state: state, controller: controller),
+              const SizedBox(height: 16),
+              _GridSection(state: state, controller: controller),
               const SizedBox(height: 24),
               _RecommendationsSection(state: state, controller: controller),
               const DeveloperFooter(),
